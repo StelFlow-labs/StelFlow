@@ -123,9 +123,7 @@ The second matters more if you're deciding whether to contribute. StackStream's 
 
 StackStream is a separate codebase, not a preview of this one. Clarity and Rust/Soroban differ enough in storage model, fee model, and asset interface that porting was never on the table. Most of what makes StelFlow's design specific — the persistent-storage choice, TTL archival handling, the milestone cap forced by the per-transaction read budget — answers Soroban constraints that have no Stacks equivalent.
 
-<!-- TODO(maintainer): two things to check before a reviewer does.
-     1. StackStream has a mainnet deployment *plan* but that isn't the same as being deployed. If it IS live, state that plainly and link the contract. If it isn't, don't let "shipped" imply mainnet — the repo is strong enough without the claim.
-     2. StackStream has no LICENSE file, which technically makes it all-rights-reserved and undercuts an open-source track record. Add Apache-2.0 or MIT to it; five minutes, and it's the first thing a careful reviewer notices. -->
+<!-- TODO(maintainer): StackStream has a mainnet deployment *plan*, which is not the same as being deployed. If it is live, state that plainly and link the contract. If it isn't, leave this as-is — nothing above claims mainnet, and the repo stands without it. -->
 
 ## License
 

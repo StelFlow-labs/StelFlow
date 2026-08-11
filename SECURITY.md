@@ -16,8 +16,6 @@ Preferred: GitHub's [private vulnerability reporting](https://github.com/StelFlo
 
 If you can't or won't use GitHub, email **jethroirmiya@gmail.com** with `[StelFlow security]` in the subject.
 
-<!-- TODO(maintainer): enable Private Vulnerability Reporting (Settings → Code security → Private vulnerability reporting). Until it's on, the link above 404s. Do this before the repo goes public. -->
-
 <!-- TODO(maintainer): a PGP key is optional but some researchers expect one. Publish a fingerprint here if you set one up. -->
 
 ### What to include
