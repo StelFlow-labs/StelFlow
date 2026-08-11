@@ -1,0 +1,93 @@
+# ---------- Rust / Soroban ----------
+target/
+**/*.rs.bk
+*.pdb
+
+# Cargo.lock: committed. These are binary contract artifacts with custody of
+# funds — builds must be reproducible, so the lockfile is tracked deliberately.
+# Do not add Cargo.lock below.
+
+# Built contract artifacts. Release Wasm is published with the release,
+# not carried in the tree.
+*.wasm
+*.wasm.d.ts
+.stellar/
+.soroban/
+
+# Coverage
+*.profraw
+*.profdata
+lcov.info
+tarpaulin-report.html
+
+# ---------- Node / TypeScript ----------
+node_modules/
+.pnpm-store/
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+
+dist/
+build/
+out/
+lib/
+*.tsbuildinfo
+.eslintcache
+
+# Generated contract bindings — regenerated from the contract spec in CI,
+# so a stale checked-in copy is worse than none.
+packages/*/src/generated/
+
+# Framework caches
+.next/
+.nuxt/
+.vite/
+.turbo/
+.parcel-cache/
+.astro/
+.cache/
+
+# Test output
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ---------- Secrets and local config ----------
+# Keys never belong in this repo. Mainnet keys especially.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.toml
+identity.toml
+
+# ---------- Editors and OS ----------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ---------- Local scratch ----------
+tmp/
+.tmp/
+scratch/

@@ -1,0 +1,74 @@
+name: Feature request
+description: Propose new behavior, or argue for a design change.
+title: "feat: "
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read [ROADMAP.md](../blob/main/ROADMAP.md) first — including the "Not on the roadmap" section at the bottom, which lists things that were considered and deliberately excluded. Arguing one of those back in is legitimate, but say you're doing it.
+
+        Design arguments are welcome here. At this stage they're more valuable than code.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Contract (Soroban)
+        - TypeScript SDK
+        - Indexer
+        - Dashboard
+        - Docs
+        - Cross-cutting design
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve
+      description: Describe the situation, not the solution. If you have a concrete use case — a grant program, a payroll run, a vesting schedule that doesn't fit today's design — describe that.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should happen. Function signatures and state transitions are welcome if you have them.
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Effect on Soroban constraints
+      description: |
+        For contract changes, this is the part reviewers read first. See [docs/architecture.md](../blob/main/docs/architecture.md#how-soroban-shapes-the-design).
+      value: |
+        - Extra ledger entries read or written per call:
+        - Effect on the stream entry's size:
+        - New unbounded loops or collections (be honest — this is usually a blocker):
+        - Effect on TTL / archival behavior:
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including doing this off-chain, in the SDK, or in a Trustless Work escrow instead of in the contract. A lot of proposals belong in one of those.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contributing
+    attributes:
+      label: Would you implement this?
+      options:
+        - "Yes, if the design is accepted"
+        - "Maybe, with guidance"
+        - "No — proposing only"
+    validations:
+      required: true

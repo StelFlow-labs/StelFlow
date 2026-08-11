@@ -1,0 +1,58 @@
+name: Documentation issue
+description: Something in the docs is wrong, missing, or unclear.
+title: "docs: "
+labels: ["documentation", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Docs are most of what exists right now, so doc issues carry real weight.
+
+        Especially useful: catching a claim about Soroban that is out of date. Network limits, SDK versions, CLI names, and SEP statuses all move, and a stale number in the architecture doc can send someone down the wrong path.
+
+  - type: input
+    id: location
+    attributes:
+      label: Which document
+      placeholder: "docs/architecture.md → \"The per-transaction read budget\""
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of problem
+      options:
+        - Factually wrong
+        - Out of date (was true, isn't now)
+        - Unclear or ambiguous
+        - Missing entirely
+        - Contradicts another doc
+        - Broken link, typo, or formatting
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's wrong
+      description: Quote the passage.
+    validations:
+      required: true
+
+  - type: textarea
+    id: correction
+    attributes:
+      label: What it should say
+      description: |
+        For a factual correction, link a source — Stellar docs, a SEP, a CAP or SLP, the SDK changelog. "I think the limit is different" is a start; a link settles it.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: fix
+    attributes:
+      label: Fixing it
+      options:
+        - label: I'd like to submit a PR for this
+          required: false
