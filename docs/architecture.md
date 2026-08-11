@@ -137,11 +137,14 @@ So: **one `persistent` entry per stream, keyed by stream ID.** Contract-wide con
 The real design pressure is that persistent entries still have a TTL and streams are long-lived. A 4-year vesting stream with a 1-year cliff will sit untouched for longer than a default TTL window. The design has to handle this rather than hope:
 
 - Every state-changing call (`withdraw`, `approve_milestone`) calls `extend_ttl` on the stream's entry. Active streams keep themselves alive for free.
-- Long-dormant streams *will* archive. That is acceptable, not a bug: archival preserves the entry, and a `RestoreFootprintOp` brings it back. The recipient pays a restore fee and withdraws. Nothing is lost.
+- `create_stream` sizes its initial extension to the stream's own cliff/duration rather than a flat default — the contract already has that information, and it's the single biggest lever against a stream that's dormant by design (a long cliff) rather than by neglect.
+- Long-dormant streams *will* archive anyway — no single extension survives a multi-year gap; see the research doc below for why. That is acceptable, not a bug: archival preserves the entry, and restoration brings it back. The recipient pays a restore fee and withdraws. Nothing is lost.
 - The SDK must detect an archived entry and produce a restore-then-withdraw flow, not a confusing "stream not found." This is the single most likely source of bad UX in the project and it needs to be handled in the SDK, not left to the app developer.
-- A `bump_stream` entry point lets anyone extend any stream's TTL, so a sender or a watcher service can keep a dormant stream hot without the recipient acting.
+- A `bump_stream` entry point lets anyone extend any stream's TTL, so a sender or a watcher service can keep a dormant stream hot without the recipient acting — but StelFlow itself doesn't operate one; see the research doc for why that's a deliberate scope line, not an oversight.
 
-<!-- TODO(maintainer): pick target TTL extension thresholds (extend_to / threshold ledgers) once you've priced rent for a realistic stream count. These are tunable and network-dependent, so they belong in config, not constants. -->
+Mechanism resolved in [docs/research/ttl-strategy.md](research/ttl-strategy.md), including live-checked network numbers and concrete SDK guidance for the restore-then-withdraw flow.
+
+<!-- TODO(maintainer): the mechanism above is decided; what's still open is the exact numeric thresholds (extend_to / threshold ledgers, and the creation-time multiple of cliff duration). That needs measurement against real footprint sizes once the stream struct exists — do it alongside the MAX_MILESTONES_PER_STREAM measurement in the read-budget section below, not before. -->
 
 ### The per-transaction read budget
 
