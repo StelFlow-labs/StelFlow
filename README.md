@@ -82,6 +82,7 @@ Dashed components are planned and unbuilt. [docs/architecture.md](docs/architect
 - [docs/concepts.md](docs/concepts.md) — what money streaming and milestone-gating actually mean, from zero.
 - [docs/architecture.md](docs/architecture.md) — components, data flow, and the Soroban constraints that drive the design.
 - [ROADMAP.md](ROADMAP.md) — what gets built, in what order.
+- [docs/faq.md](docs/faq.md) — short answers to what people actually ask, including the ones with uncomfortable answers: no, it isn't audited, and yes, an asset issuer with clawback enabled can reach a live stream.
 
 ## Quickstart
 
