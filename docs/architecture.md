@@ -32,7 +32,9 @@ The [indexer](glossary.md#indexer) subscribes to StelFlow's contract events via 
 
 It is a cache, not an authority. If the indexer and the chain disagree, the chain is right. The dashboard must be able to show a stream's current claimable balance without the indexer being up — that number comes from simulating a contract read, not from the database.
 
-<!-- TODO(maintainer): choose the runtime and datastore, and decide the RPC event-retention backstop (RPC keeps a bounded window, so a cold-start reindex needs an archive source). Record the choice here. -->
+Runtime and datastore: a Node/TypeScript poller against `getEvents` (RPC exposes no push/subscription channel, so polling is the only option, not a choice), writing an append-only, `event_id`-deduped event log to PostgreSQL, with all other tables derived from it by a pure fold so a wipe-and-replay reaches identical state. The RPC event-retention backstop is Galexie-backed self-hosted backfill, with Hubble as a fast one-off cold-start path. Full reasoning, the cursor/checkpoint mechanics, and the schema are in [docs/research/indexer-design.md](research/indexer-design.md).
+
+<!-- TODO(maintainer): the mechanism above is decided; what's still open is the tunable numbers — confirmation depth (CONFIRMATION_LEDGERS), poll interval, and reconciliation-job interval. Those need measurement against a real deployment, not a guess, per docs/research/indexer-design.md#11-what-this-doesnt-settle. -->
 
 ### 3. TypeScript SDK — planned
 
