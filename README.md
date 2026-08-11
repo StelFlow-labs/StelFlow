@@ -15,7 +15,7 @@ So StelFlow combines three things that usually live in separate contracts:
 
 - **Continuous accrual** — the recipient's claimable balance is a function of ledger time, computed on read, not pushed on a schedule.
 - **Milestone gates** — a stream segment can be held until an approver marks its milestone met. Accrual continues; withdrawal does not.
-- **Cancel and clawback** — the sender can stop a stream and recover the *unstreamed* remainder. Already-accrued funds stay with the recipient.
+- **Cancel and [clawback](docs/glossary.md#clawback-stelflow-sense)** — the sender can stop a stream and recover the *unstreamed* remainder. Already-accrued funds stay with the recipient.
 
 Target uses: grant disbursement, DAO payroll, and vesting with cliffs — the cases where a lump-sum escrow is too coarse and a cron job is too fragile.
 
@@ -81,6 +81,7 @@ Dashed components are planned and unbuilt. [docs/architecture.md](docs/architect
 
 - [docs/concepts.md](docs/concepts.md) — what money streaming and milestone-gating actually mean, from zero.
 - [docs/architecture.md](docs/architecture.md) — components, data flow, and the Soroban constraints that drive the design.
+- [docs/glossary.md](docs/glossary.md) — every term in one place. Start here if you landed mid-doc. Note that [clawback](docs/glossary.md#clawback-issuer-sense) means two different things in this project.
 - [ROADMAP.md](ROADMAP.md) — what gets built, in what order.
 - [docs/faq.md](docs/faq.md) — short answers to what people actually ask, including the ones with uncomfortable answers: no, it isn't audited, and yes, an asset issuer with clawback enabled can reach a live stream.
 

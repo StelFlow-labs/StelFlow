@@ -2,7 +2,7 @@
 
 This describes the intended system and the reasoning behind it. **None of it is implemented.** Where a number or an interface is still undecided, there is a TODO rather than a guess.
 
-Read [concepts.md](concepts.md) first if "streamed vs. claimable" isn't already obvious to you.
+Read [concepts.md](concepts.md) first if "streamed vs. claimable" isn't already obvious to you. [glossary.md](glossary.md) defines the Soroban-specific vocabulary this page uses.
 
 ## Components
 
@@ -28,7 +28,7 @@ Non-responsibilities, deliberately: no dispute resolution, no identity, no asset
 
 Soroban contracts can emit events, but they cannot be queried historically from inside the chain, and RPC retains event history for a limited window only. Anything that answers "show me every stream this address has ever received" has to be reconstructed off-chain.
 
-The indexer subscribes to StelFlow's contract events via Stellar RPC, writes them to a database, and serves queries the contract can't: stream lists by participant, historical withdrawal timelines, aggregate treasury outflow, milestone approval audit trails.
+The [indexer](glossary.md#indexer) subscribes to StelFlow's contract events via Stellar RPC, writes them to a database, and serves queries the contract can't: stream lists by participant, historical withdrawal timelines, aggregate treasury outflow, milestone approval audit trails.
 
 It is a cache, not an authority. If the indexer and the chain disagree, the chain is right. The dashboard must be able to show a stream's current claimable balance without the indexer being up — that number comes from simulating a contract read, not from the database.
 
@@ -50,7 +50,7 @@ Create streams, watch them accrue, withdraw, approve milestones, cancel. Three v
 
 Creating a stream:
 
-1. Sender approves StelFlow Core to move `total` of a SEP-41 asset (or the SDK bundles the approval).
+1. Sender approves StelFlow Core to move `total` of a [SEP-41](glossary.md#sep-41) asset (or the SDK bundles the approval).
 2. Sender calls `create_stream`. The contract calls `transfer_from` on the asset, taking full custody up front. A stream that isn't fully funded at creation is not a stream — it's a promise, and the point is to remove promises.
 3. The contract writes stream state and emits a creation event.
 4. The indexer picks up the event and materializes the stream. The dashboard shows it.
@@ -59,7 +59,7 @@ Withdrawing:
 
 1. The SDK computes the expected claimable amount locally and shows it.
 2. Recipient submits `withdraw`. The contract recomputes from its own ledger timestamp — the local number is a display, never an input to settlement.
-3. Contract transfers the asset, bumps the withdrawn counter, extends the entry's TTL, emits an event.
+3. Contract transfers the asset, bumps the withdrawn counter, extends the entry's [TTL](glossary.md#ttl-time-to-live), emits an event.
 
 The important property: **no off-chain component is on the critical path for getting paid.** If the indexer and the dashboard both disappear, a recipient with the contract address and a wallet can still withdraw everything they're owed.
 
@@ -108,7 +108,7 @@ This is the part that matters. Streaming is easy; streaming *on this chain* has 
 
 ### Ledger time is the clock
 
-`env.ledger().timestamp()` returns the close time of the ledger executing the transaction, in seconds since the Unix epoch. There is no block number to count and no way to schedule a future call — Soroban has no cron, no keepers, no self-scheduling. That is precisely why a *computed* stream is the right shape here: the contract never needs to wake up. It only needs to answer correctly whenever someone asks.
+`env.ledger().timestamp()` returns the [close time](glossary.md#ledger-close-time) of the ledger executing the transaction, in seconds since the Unix epoch. There is no block number to count and no way to schedule a future call — Soroban has no cron, no keepers, no self-scheduling. That is precisely why a *computed* stream is the right shape here: the contract never needs to wake up. It only needs to answer correctly whenever someone asks.
 
 Consequences to design around:
 
@@ -118,7 +118,7 @@ Consequences to design around:
 
 ### Arithmetic
 
-Balances are `i128`. Accrual is `total * elapsed / duration`, and the multiplication must come first — dividing first throws away the entire fractional rate for typical 7-decimal assets. `total * elapsed` can be large (a 10^15-stroop stream over a 10^9-second range is ~10^24), which fits `i128` comfortably but not `i64`, so the intermediate type is not optional.
+Balances are [`i128`](glossary.md#i128). Accrual is `total * elapsed / duration`, and the multiplication must come first — dividing first throws away the entire fractional rate for typical 7-decimal assets. `total * elapsed` can be large (a 10^15-stroop stream over a 10^9-second range is ~10^24), which fits `i128` comfortably but not `i64`, so the intermediate type is not optional.
 
 Rounding is always down, and the withdrawn counter is the source of truth for what's been paid. Recomputing `streamed` from scratch each time and subtracting `withdrawn` means rounding error can't accumulate across withdrawals — the final withdrawal settles to exactly `total` because the end-of-stream case is special-cased to the remaining balance rather than the formula.
 
@@ -128,9 +128,9 @@ Soroban has three storage types, and picking wrong here is fatal:
 
 | Type | Behavior when TTL lapses | Fit for stream state |
 |---|---|---|
-| `temporary` | **Permanently deleted.** Unrecoverable. | No. Deleting a stream deletes custody records for real money. |
-| `instance` | Archived with the contract; every entry loads on every call. | No. All streams would share one entry and every call would pay to load all of them. |
-| `persistent` | Archived, restorable via `RestoreFootprintOp`. | Yes. |
+| [`temporary`](glossary.md#temporary-storage) | **Permanently deleted.** Unrecoverable. | No. Deleting a stream deletes custody records for real money. |
+| [`instance`](glossary.md#instance-storage) | Archived with the contract; every entry loads on every call. | No. All streams would share one entry and every call would pay to load all of them. |
+| [`persistent`](glossary.md#persistent-storage) | [Archived](glossary.md#state-archival), restorable via [`RestoreFootprintOp`](glossary.md#restorefootprintop). | Yes. |
 
 So: **one `persistent` entry per stream, keyed by stream ID.** Contract-wide config goes in `instance` storage, because it's small and needed on every call.
 
@@ -145,7 +145,7 @@ The real design pressure is that persistent entries still have a TTL and streams
 
 ### The per-transaction read budget
 
-A Soroban transaction declares a footprint and is capped on how many ledger entries it may read and write. Those caps are network settings, not compile-time constants — they've been raised repeatedly (100 read entries and 50 writes after SLP-0001 in early 2025; SLP-0004, finalized January 2026, takes disk reads and writes to 200 entries each and instructions to 400M). Check the live values with `stellar network settings` rather than trusting any number written in a doc, including this one.
+A Soroban transaction declares a [footprint](glossary.md#footprint) and is capped on how many [ledger entries](glossary.md#ledger-entry) it may read and write. Those caps are network settings, not compile-time constants — they've been raised repeatedly (100 read entries and 50 writes after SLP-0001 in early 2025; SLP-0004, finalized January 2026, takes disk reads and writes to 200 entries each and instructions to 400M). Check the live values with `stellar network settings` rather than trusting any number written in a doc, including this one.
 
 The design implication survives whatever the current number is: **per-stream entries mean batch operations are bounded, so bound them explicitly.**
 
@@ -158,14 +158,14 @@ The design implication survives whatever the current number is: **per-stream ent
 
 ### SEP-41 assets
 
-StelFlow streams anything implementing the [SEP-41 token interface](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0041.md), which includes the Stellar Asset Contract — so any classic Stellar asset, USDC included, works via its SAC wrapper, alongside purpose-built Soroban tokens.
+StelFlow streams anything implementing the [SEP-41 token interface](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0041.md), which includes the [Stellar Asset Contract](glossary.md#stellar-asset-contract-sac) — so any classic Stellar asset, USDC included, works via its SAC wrapper, alongside purpose-built Soroban tokens.
 
 What this buys: one integration path for both asset families, and `i128` balances that match the internal math.
 
 What it costs, and what the contract must not assume:
 
 - **SEP-41 is still a Draft SEP.** It's stable in practice and the SAC implements it, but the contract should depend only on the functions it actually calls (`transfer`, `transfer_from`, `balance`, `decimals`) rather than the full surface.
-- **Issuer clawback is out of scope and cannot be defended against.** If an asset has clawback enabled, its issuer can remove funds the contract is holding for a live stream. The contract should not pretend its stored `total` is a guarantee — `balance` is the truth. The dashboard should warn when a stream's asset has clawback enabled. This is a disclosure problem, not a code problem.
+- **[Issuer clawback](glossary.md#clawback-issuer-sense) is out of scope and cannot be defended against.** The power is the [SAC](glossary.md#stellar-asset-contract-sac)'s admin `clawback` rather than anything SEP-41 defines, so it rides on the asset, not on the interface: if the issuer enabled clawback, they can remove funds the contract is holding for a live stream. The contract should not pretend its stored `total` is a guarantee — `balance` is the truth. The dashboard should warn when a stream's asset has clawback enabled. This is a disclosure problem, not a code problem.
 - **Decimals are the asset's, not ours.** All internal math is in the asset's smallest unit. Human-readable formatting happens in the SDK, never in the contract.
 - **Non-standard transfer behavior breaks accrual accounting.** A fee-on-transfer or rebasing token would leave the contract holding less than the stream promises. <!-- TODO(maintainer): decide whether create_stream verifies received balance against the requested total, or whether unsupported assets are simply documented as unsupported. -->
 
@@ -175,7 +175,7 @@ Every privileged entry point calls `require_auth` on the address that should be 
 
 ## Trustless Work integration
 
-[Trustless Work](https://docs.trustlesswork.com/) is escrow-as-a-service on Soroban, with milestones, approvals, and disputes already built. StelFlow is not trying to replace it, and shouldn't.
+[Trustless Work](https://docs.trustlesswork.com/) is [escrow](glossary.md#escrow)-as-a-service on Soroban, with milestones, approvals, and disputes already built. StelFlow is not trying to replace it, and shouldn't.
 
 The intended split: Trustless Work decides *whether* a condition is met; StelFlow decides *how fast* money moves once it is. A grant program runs its approval and dispute process in a Trustless Work escrow, and that escrow's address is the approver on the StelFlow stream's milestones. The recipient draws a continuous base stream throughout, and gated tranches unlock as the escrow resolves them.
 
@@ -193,5 +193,6 @@ Answers wanted. These are good places to argue with the design — open an issue
 
 ## Next
 
+- [glossary.md](glossary.md) — definitions for the vocabulary on this page.
 - [../ROADMAP.md](../ROADMAP.md) — build order.
 - [../CONTRIBUTING.md](../CONTRIBUTING.md) — how to pick something up.
