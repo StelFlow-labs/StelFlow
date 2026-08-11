@@ -81,6 +81,118 @@ The approver is a role, not necessarily the sender — it can be a grant committ
 - It does not extend the stream. If a milestone is approved after the end time, the recipient gets its full amount immediately — they don't get extra time.
 - It does not give the approver custody. The approver flips a flag. They cannot redirect funds.
 
+## A worked example: Alice and Bob
+
+The grant above shows the shape. This one shows the numbers, small enough to check by hand.
+
+Alice streams 3,000 USDC to Bob over 30 days. Part of it is gated on a milestone.
+
+| | Amount | Gate |
+|---|---|---|
+| Base | 1,800 USDC | Time only |
+| Milestone — design handoff | 1,200 USDC | Approver marks met |
+| **Deposit** | **3,000 USDC** | |
+
+USDC has 7 decimals, so every figure below is in stroops. 1 USDC is 10,000,000 stroops, and the 3,000 USDC deposit is **30,000,000,000 stroops**. The contract never sees "3,000 USDC" — it only ever moves stroops.
+
+The schedule is 30 days, so `duration` is 2,592,000 seconds. Both portions run on that same clock.
+
+### Day 0 — Alice creates the stream
+
+One transaction. 30,000,000,000 stroops move from Alice's account into the contract, and the contract stores the token, the two portion amounts, `start`, `end`, and the milestone's approver and state.
+
+What does not happen: nothing moves to Bob, and nothing is scheduled. There is no job to run and no signer to keep alive. From here on, Bob's balance changes because `now` changes.
+
+### Day 10 — what Bob has accrued
+
+`elapsed` is 864,000 seconds of a 2,592,000-second duration, so each portion has streamed a third of itself:
+
+```
+base      = 18,000,000,000 * 864,000 / 2,592,000 =  6,000,000,000   (600 USDC)
+milestone = 12,000,000,000 * 864,000 / 2,592,000 =  4,000,000,000   (400 USDC)
+streamed  =                                        10,000,000,000  (1,000 USDC)
+```
+
+Bob has accrued 1,000 USDC. He cannot claim 1,000 USDC. The milestone is unmet, so its 4,000,000,000 stroops are held by the gate:
+
+```
+claimable = streamed - withdrawn - held
+          = 10,000,000,000 - 0 - 4,000,000,000
+          =  6,000,000,000   (600 USDC)
+```
+
+### Day 10 — Bob withdraws
+
+Bob calls `withdraw` and receives 6,000,000,000 stroops. `withdrawn` goes from 0 to 6,000,000,000 and `claimable` drops to 0.
+
+Nothing else changes. `streamed` is still 10,000,000,000 — the withdrawal settled against the formula, it did not alter it. The gate still holds 4,000,000,000, which keeps growing.
+
+### Day 18 — the milestone is approved
+
+First, where accrual stands. `elapsed` is 1,555,200 seconds, three fifths of the duration:
+
+```
+base      = 18,000,000,000 * 1,555,200 / 2,592,000 = 10,800,000,000  (1,080 USDC)
+milestone = 12,000,000,000 * 1,555,200 / 2,592,000 =  7,200,000,000    (720 USDC)
+streamed  =                                          18,000,000,000  (1,800 USDC)
+```
+
+Just before approval, Bob can claim 10,800,000,000 − 6,000,000,000 = 4,800,000,000 stroops (480 USDC). The gate holds 7,200,000,000.
+
+The approver marks the milestone met. The gate releases, and the held amount joins `claimable`:
+
+```
+claimable = 18,000,000,000 - 6,000,000,000 - 0
+          = 12,000,000,000  (1,200 USDC)
+```
+
+**This is the step to understand.** Bob does not start earning the milestone portion on day 18 — he receives 720 USDC that accrued over the previous 18 days while the gate held it. Approval unlocked funds that were already there. It did not start a clock.
+
+Bob withdraws the full 12,000,000,000 stroops. Total withdrawn is now 18,000,000,000.
+
+### Day 30 — final withdrawal
+
+`elapsed` clamps to `duration`, so both portions have streamed in full: 18,000,000,000 and 12,000,000,000, totalling the whole 30,000,000,000 deposit.
+
+```
+claimable = 30,000,000,000 - 18,000,000,000 - 0
+          = 12,000,000,000  (1,200 USDC)
+```
+
+Of that, 7,200,000,000 stroops are the base portion's last 12 days and 4,800,000,000 are the milestone portion's. Bob withdraws it, and `claimable` is 0 with the stream fully settled.
+
+### Stream state at each checkpoint
+
+All figures in stroops.
+
+| Moment | `elapsed` (s) | Streamed | Withdrawn | Held by gate | Claimable |
+|---|---:|---:|---:|---:|---:|
+| Day 0, after create | 0 | 0 | 0 | 0 | 0 |
+| Day 10, before withdraw | 864,000 | 10,000,000,000 | 0 | 4,000,000,000 | 6,000,000,000 |
+| Day 10, after withdraw | 864,000 | 10,000,000,000 | 6,000,000,000 | 4,000,000,000 | 0 |
+| Day 18, before approval | 1,555,200 | 18,000,000,000 | 6,000,000,000 | 7,200,000,000 | 4,800,000,000 |
+| Day 18, after approval | 1,555,200 | 18,000,000,000 | 6,000,000,000 | 0 | 12,000,000,000 |
+| Day 18, after withdraw | 1,555,200 | 18,000,000,000 | 18,000,000,000 | 0 | 0 |
+| Day 30, before withdraw | 2,592,000 | 30,000,000,000 | 18,000,000,000 | 0 | 12,000,000,000 |
+| Day 30, after withdraw | 2,592,000 | 30,000,000,000 | 30,000,000,000 | 0 | 0 |
+
+Every row satisfies `claimable = streamed − withdrawn − held`.
+
+### Reconciliation
+
+| Event | Stroops | USDC |
+|---|---:|---:|
+| Day 10 withdrawal | 6,000,000,000 | 600 |
+| Day 18 withdrawal | 12,000,000,000 | 1,200 |
+| Day 30 withdrawal | 12,000,000,000 | 1,200 |
+| **Total paid to Bob** | **30,000,000,000** | **3,000** |
+| Alice's deposit | 30,000,000,000 | 3,000 |
+| **Difference** | **0** | **0** |
+
+Everything Alice deposited reached Bob. Nothing is stranded in the contract, and no stroop is unaccounted for.
+
+Day 10, 18, and 30 were chosen because each divides the portions evenly. At an arbitrary second the integer division truncates, so `streamed` can sit a few stroops below the real-valued figure. Those stroops are not lost — they are picked up as accrual moves past them, and at `end` the formula returns the exact total.
+
 ## Cancellation and clawback
 
 A stream can be created cancelable or not. Non-cancelable is the right default for vesting: the recipient needs a guarantee. Cancelable is the right default for grants: the funder needs an exit if the work stops.
