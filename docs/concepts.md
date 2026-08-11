@@ -33,20 +33,22 @@ This is the whole idea. A few consequences worth internalizing:
 - **Withdrawals are not "the stream."** The stream is the formula. Withdrawals are just settlement events against it.
 - **Cancellation has a natural meaning.** At any moment there is a clean split between what has streamed and what has not. Cancel, and the recipient keeps the streamed part, the sender takes back the rest. No negotiation about what's fair — the clock already decided.
 
-On Stellar, "now" is the ledger close timestamp, not the sender's wall clock. See [architecture.md](architecture.md#ledger-time-is-the-clock) for what that costs you in precision.
+On Stellar, "now" is the [ledger close](glossary.md#ledger-close-time) timestamp, not the sender's wall clock. See [architecture.md](architecture.md#ledger-time-is-the-clock) for what that costs you in precision.
 
 ### Terms
 
+The working set for this page. [glossary.md](glossary.md) has the full list, including the Soroban-specific vocabulary [architecture.md](architecture.md) uses.
+
 | Term | Meaning |
 |---|---|
-| **Stream** | One sender → one recipient, one asset, one schedule. The unit of everything. |
-| **Sender** | Funds the stream at creation. May cancel if the stream is cancelable. |
-| **Recipient** | Accrues continuously; calls `withdraw` to settle. |
-| **Streamed** | Amount the formula says has accrued so far. |
-| **Withdrawn** | Amount actually paid out. Always ≤ streamed. |
-| **Claimable** | `streamed − withdrawn`, minus anything held by a milestone gate. |
-| **Unstreamed** | `total − streamed`. What the sender gets back on cancel. |
-| **Cliff** | A time before which nothing is claimable, even though accrual has started. |
+| **[Stream](glossary.md#stream)** | One sender → one recipient, one asset, one schedule. The unit of everything. |
+| **[Sender](glossary.md#sender)** | Funds the stream at creation. May cancel if the stream is cancelable. |
+| **[Recipient](glossary.md#recipient)** | Accrues continuously; calls `withdraw` to settle. |
+| **[Streamed](glossary.md#streamed)** | Amount the formula says has accrued so far. |
+| **[Withdrawn](glossary.md#withdrawn)** | Amount actually paid out. Always ≤ streamed. |
+| **[Claimable](glossary.md#claimable)** | `streamed − withdrawn`, minus anything held by a milestone gate. |
+| **[Unstreamed](glossary.md#unstreamed-balance)** | `total − streamed`. What the sender gets back on cancel. |
+| **[Cliff](glossary.md#cliff)** | A time before which nothing is claimable, even though accrual has started. |
 
 ### Cliffs
 
@@ -58,7 +60,7 @@ This is the standard vesting shape, and it's why "vesting with a cliff" is a str
 
 Time is a bad proxy for progress. A grant paid purely on a clock pays out whether or not the work happened. A grant paid purely on approval leaves the recipient unfunded while they do the work. StelFlow's answer is to keep the clock running and gate the *release*.
 
-A **milestone** attaches to a portion of the stream. Each milestone has an amount, an approver, and a state. Funds inside an unmet milestone's portion accrue normally but are not claimable. When the approver marks the milestone met, that portion unlocks and joins the recipient's claimable balance — including everything that accrued while it was locked.
+A **[milestone](glossary.md#milestone)** attaches to a portion of the stream. Each milestone has an amount, an [approver](glossary.md#approver), and a state. Funds inside an unmet milestone's portion accrue normally but are not claimable. When the approver marks the milestone met, that portion unlocks and joins the recipient's claimable balance — including everything that accrued while it was locked.
 
 Concretely, a 100,000 USDC / 12-month grant might be:
 
@@ -93,7 +95,7 @@ Alice streams 3,000 USDC to Bob over 30 days. Part of it is gated on a milestone
 | Milestone — design handoff | 1,200 USDC | Approver marks met |
 | **Deposit** | **3,000 USDC** | |
 
-USDC has 7 decimals, so every figure below is in stroops. 1 USDC is 10,000,000 stroops, and the 3,000 USDC deposit is **30,000,000,000 stroops**. The contract never sees "3,000 USDC" — it only ever moves stroops.
+USDC has 7 decimals, so every figure below is in [stroops](glossary.md#stroop). 1 USDC is 10,000,000 stroops, and the 3,000 USDC deposit is **30,000,000,000 stroops**. The contract never sees "3,000 USDC" — it only ever moves stroops.
 
 The schedule is 30 days, so `duration` is 2,592,000 seconds. Both portions run on that same clock.
 
@@ -195,7 +197,7 @@ Day 10, 18, and 30 were chosen because each divides the portions evenly. At an a
 
 ## Cancellation and clawback
 
-A stream can be created cancelable or not. Non-cancelable is the right default for vesting: the recipient needs a guarantee. Cancelable is the right default for grants: the funder needs an exit if the work stops.
+A stream can be created [cancelable](glossary.md#cancelable) or not. Non-cancelable is the right default for vesting: the recipient needs a guarantee. Cancelable is the right default for grants: the funder needs an exit if the work stops.
 
 On cancel:
 
@@ -204,9 +206,9 @@ On cancel:
 3. The unstreamed remainder returns to the sender.
 4. Unapproved milestone tranches are treated as unstreamed and return to the sender.
 
-Point 4 is a deliberate choice: an unmet milestone is work that didn't happen, so its funds go back. Point 2 is the other half of the deal — cancellation is not a clawback of earned money. "Clawback" in StelFlow means only the unstreamed remainder.
+Point 4 is a deliberate choice: an unmet milestone is work that didn't happen, so its funds go back. Point 2 is the other half of the deal — cancellation is not a clawback of earned money. ["Clawback" in StelFlow](glossary.md#clawback-stelflow-sense) means only the unstreamed remainder.
 
-> Note: this is distinct from SEP-41's `clawback`, which is an *issuer* power to burn an asset from any holder. If the asset you stream has issuer clawback enabled, the issuer can pull funds out from under a live stream, and StelFlow cannot prevent that. Check the asset's flags before you rely on a stream.
+> Note: this is distinct from [SEP-41's `clawback`](glossary.md#clawback-issuer-sense), which is an *issuer* power to burn an asset from any holder. If the asset you stream has issuer clawback enabled, the issuer can pull funds out from under a live stream, and StelFlow cannot prevent that. Check the asset's flags before you rely on a stream.
 
 ## How this differs from what already exists
 
@@ -222,5 +224,6 @@ The last row is the one StelFlow is built for.
 
 ## Next
 
+- [glossary.md](glossary.md) — every term on this page in one place, plus the Soroban vocabulary.
 - [architecture.md](architecture.md) — how this is actually built on Soroban, and which constraints bend the design.
 - [../ROADMAP.md](../ROADMAP.md) — the order it gets built in.
