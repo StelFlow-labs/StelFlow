@@ -20,6 +20,14 @@ Read [docs/architecture.md](docs/architecture.md) before contributing code. It e
 
 **Before you write code, comment on the issue saying you're taking it.** A maintainer will assign it to you. This costs you ten seconds and prevents two people shipping the same thing. If you go quiet for two weeks the issue gets unassigned — no hard feelings, just say so if you want it back.
 
+What happens if you skip that step, since the rule is only useful if you know what it costs you:
+
+- **A PR on an unassigned issue still gets reviewed.** You won't be turned away for missing the comment. The claim exists to stop duplicated effort, and if nobody else was working on it, nothing was lost.
+- **A PR on an issue assigned to someone else does not.** The assignee has right of way until they're unassigned, whoever pushed code first. If you have most of a solution already, say so on the issue and we'll sort it out — but don't assume that arriving with a finished diff wins the issue.
+- **If two unclaimed PRs land on one issue, the earlier claim wins; with no claim at all, the earlier PR does.** The other author gets first refusal on a related issue. This is a tiebreak, not a race to publish — nobody benefits from two people burning a weekend on the same doc.
+
+Claiming is one comment. It is the cheapest thing in this process and the only one that protects your time rather than ours.
+
 If nothing fits, open an issue describing what you want to do before building it. An unsolicited large PR is likely to conflict with something in the roadmap and get rejected on scope, which wastes your time more than it wastes ours.
 
 ## Local setup
