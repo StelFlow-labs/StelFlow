@@ -15,15 +15,15 @@ StelFlow has one maintainer today. That's a bus factor of one, and worth stating
 ## Contributors
 
 <!--
-Add yourself in the same PR as your contribution. Alphabetical by handle.
-Format:
+Maintainers add rows here when a PR merges. Contributors: don't edit this file
+in your PR — see "How you get added" below. Alphabetical by handle. Format:
 
 | [@handle](https://github.com/handle) | What you contributed | #PR or #issue |
 -->
 
 | Handle | Contribution | Ref |
 |---|---|---|
-| _Nobody yet._ Be first — see [CONTRIBUTING.md](CONTRIBUTING.md). | | |
+| [@d-plug](https://github.com/d-plug) | The worked Alice-and-Bob example in [concepts.md](docs/concepts.md) — StelFlow's first merged PR. Also caught that the doc's account of end-of-stream exactness didn't match architecture.md. | [#16](https://github.com/StelFlow-labs/StelFlow/pull/16) |
 
 ## Design review and prior art
 
