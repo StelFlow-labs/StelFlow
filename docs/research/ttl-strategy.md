@@ -1,6 +1,6 @@
 # Research: TTL and state-archival strategy for long-lived streams
 
-Answers [issue #6](https://github.com/dannyy2000/StelFlow/issues/6). Narrows the TODO in [architecture.md → Storage type and TTL](../architecture.md#storage-type-and-ttl).
+Answers [issue #6](https://github.com/StelFlow-labs/StelFlow/issues/6). Narrows the TODO in [architecture.md → Storage type and TTL](../architecture.md#storage-type-and-ttl).
 
 **The problem, restated precisely:** a stream is one [`persistent`](../glossary.md#persistent-storage) entry. Persistent entries have a [TTL](../glossary.md#ttl-time-to-live) that must be periodically extended or the entry [archives](../glossary.md#state-archival). A 4-year vesting stream with a 1-year cliff sits untouched for far longer than any single TTL extension can cover — checked below, the network's own maximum extension window is about six months, not four years. Archival of the highest-value streams isn't a tail risk to design around; it's what happens by default unless something acts on the stream's behalf. This document works out how TTL and archival actually behave today, what keeping a stream alive costs, which mitigation is worth building, and what a recipient's SDK needs to do about the streams that archive anyway.
 
