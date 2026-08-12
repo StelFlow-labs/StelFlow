@@ -24,6 +24,7 @@ in your PR — see "How you get added" below. Alphabetical by handle. Format:
 | Handle | Contribution | Ref |
 |---|---|---|
 | [@d-plug](https://github.com/d-plug) | The worked Alice-and-Bob example in [concepts.md](docs/concepts.md) — StelFlow's first merged PR. Also caught that the doc's account of end-of-stream exactness didn't match architecture.md. | [#16](https://github.com/StelFlow-labs/StelFlow/pull/16) |
+| [@dannyy2000](https://github.com/dannyy2000) | The TTL and state-archival research in [research/ttl-strategy.md](docs/research/ttl-strategy.md), including the finding that no single extension can cover a multi-year stream, and the Protocol 23 correction to the SDK's restore flow. | [#21](https://github.com/StelFlow-labs/StelFlow/pull/21) |
 
 ## Design review and prior art
 
