@@ -8,17 +8,17 @@ Where StelFlow is going and in what order. Phases are sequenced by dependency, n
 
 ## Status at a glance
 
-| Phase | Scope | Status |
-|---|---|---|
-| 0 | Design and docs | 🟡 In progress |
-| 1 | Contract core | ⚪ Not started |
-| 2 | Milestones and cancellation | ⚪ Not started |
-| 3 | Indexer | ⚪ Not started |
-| 4 | TypeScript SDK | ⚪ Not started |
-| 5 | Dashboard | ⚪ Not started |
-| 6 | Trustless Work integration | ⚪ Not started |
-| 7 | Hardening and audit | ⚪ Not started |
-| 8 | Mainnet | ⚪ Not started |
+| Phase | Scope                       | Status         |
+| ----- | --------------------------- | -------------- |
+| 0     | Design and docs             | 🟡 In progress |
+| 1     | Contract core               | ⚪ Not started |
+| 2     | Milestones and cancellation | ⚪ Not started |
+| 3     | Indexer                     | ⚪ Not started |
+| 4     | TypeScript SDK              | ⚪ Not started |
+| 5     | Dashboard                   | ⚪ Not started |
+| 6     | Trustless Work integration  | ⚪ Not started |
+| 7     | Hardening and audit         | ⚪ Not started |
+| 8     | Mainnet                     | ⚪ Not started |
 
 ---
 

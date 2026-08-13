@@ -6,8 +6,8 @@ This list is not only for merged PRs. A design argument that changed the archite
 
 ## Maintainers
 
-| Handle | Role |
-|---|---|
+| Handle                                         | Role                                                                                                      |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | [@jayteemoney](https://github.com/jayteemoney) | Author, maintainer. Previously built [StackStream](https://github.com/jayteemoney/stackstream) on Stacks. |
 
 StelFlow has one maintainer today. That's a bus factor of one, and worth stating plainly rather than leaving a reader to work out. Growing this table is an explicit goal — contributors who stay past a couple of merged PRs get asked.
@@ -21,9 +21,9 @@ in your PR — see "How you get added" below. Alphabetical by handle. Format:
 | [@handle](https://github.com/handle) | What you contributed | #PR or #issue |
 -->
 
-| Handle | Contribution | Ref |
-|---|---|---|
-| [@d-plug](https://github.com/d-plug) | The worked Alice-and-Bob example in [concepts.md](docs/concepts.md) — StelFlow's first merged PR. Also caught that the doc's account of end-of-stream exactness didn't match architecture.md. | [#16](https://github.com/StelFlow-labs/StelFlow/pull/16) |
+| Handle                                       | Contribution                                                                                                                                                                                                                              | Ref                                                      |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| [@d-plug](https://github.com/d-plug)         | The worked Alice-and-Bob example in [concepts.md](docs/concepts.md) — StelFlow's first merged PR. Also caught that the doc's account of end-of-stream exactness didn't match architecture.md.                                             | [#16](https://github.com/StelFlow-labs/StelFlow/pull/16) |
 | [@dannyy2000](https://github.com/dannyy2000) | The TTL and state-archival research in [research/ttl-strategy.md](docs/research/ttl-strategy.md), including the finding that no single extension can cover a multi-year stream, and the Protocol 23 correction to the SDK's restore flow. | [#21](https://github.com/StelFlow-labs/StelFlow/pull/21) |
 
 ## Design review and prior art

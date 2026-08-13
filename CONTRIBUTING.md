@@ -10,13 +10,13 @@ Read [docs/architecture.md](docs/architecture.md) before contributing code. It e
 
 **Picking up an issue.** Issues are labeled by difficulty and area:
 
-| Label | What it means |
-|---|---|
-| `good first issue` | Scoped so you don't need the whole design in your head. Every one has acceptance criteria written out. |
-| `help wanted` | Real work, needs some context. |
-| `design` | No code — a decision that needs input. |
-| `area: contract` / `area: sdk` / `area: indexer` / `area: dashboard` / `area: docs` | Which part of the system. |
-| `blocked` | Depends on an unfinished phase. Don't start these. |
+| Label                                                                               | What it means                                                                                          |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `good first issue`                                                                  | Scoped so you don't need the whole design in your head. Every one has acceptance criteria written out. |
+| `help wanted`                                                                       | Real work, needs some context.                                                                         |
+| `design`                                                                            | No code — a decision that needs input.                                                                 |
+| `area: contract` / `area: sdk` / `area: indexer` / `area: dashboard` / `area: docs` | Which part of the system.                                                                              |
+| `blocked`                                                                           | Depends on an unfinished phase. Don't start these.                                                     |
 
 **Before you write code, comment on the issue saying you're taking it.** A maintainer will assign it to you. This costs you ten seconds and prevents two people shipping the same thing. If you go quiet for two weeks the issue gets unassigned — no hard feelings, just say so if you want it back.
 
@@ -32,58 +32,13 @@ If nothing fits, open an issue describing what you want to do before building it
 
 ## Local setup
 
-Nothing in this repo builds yet. This is the toolchain you'll need when Phase 1 lands.
+Nothing in this repo builds yet — Phase 1 is where contract crates arrive, see
+[ROADMAP.md](ROADMAP.md). What you need in the meantime, verified end-to-end by actually running
+it rather than transcribed from documentation, lives in
+[docs/dev-setup.md](docs/dev-setup.md): Rust, `wasm32v1-none`, `stellar-cli`, Node/pnpm, a funded
+testnet identity, and the commands to check current network limits. Start there.
 
-### Contracts (Rust + Soroban)
-
-```bash
-# Rust — 1.84 or newer, required by the wasm32v1-none target
-rustup install stable
-rustup target add wasm32v1-none
-
-# Stellar CLI (this is the tool formerly called soroban-cli)
-cargo install --locked stellar-cli
-
-# Verify
-rustc --version
-stellar --version
-```
-
-Contracts build to `wasm32v1-none`, not the older `wasm32-unknown-unknown`. If you find a tutorial using the old target, it predates the current SDK.
-
-```bash
-stellar contract build       # build the Wasm
-cargo test                   # unit tests, run against a mocked ledger
-cargo fmt --all              # formatting is enforced in CI
-cargo clippy --all-targets -- -D warnings
-```
-
-### Testnet identity
-
-```bash
-stellar keys generate --global alice --network testnet --fund
-stellar keys address alice
-```
-
-Never put a mainnet key in a config file in this repo. There is no reason to have one here.
-
-### SDK and dashboard (Node)
-
-```bash
-node --version   # 22 LTS or newer
-corepack enable  # we use pnpm
-pnpm install
-```
-
-<!-- TODO(maintainer): pin the exact Node version in .nvmrc and the package manager version in package.json#packageManager once the workspace exists, then update this section to match. -->
-
-### Checking network limits
-
-Several design constants depend on live network settings, which change between protocol upgrades. Don't trust numbers in docs — including ours:
-
-```bash
-stellar network settings --network testnet
-```
+<!-- TODO(maintainer): pin the exact Node version in .nvmrc once the SDK/dashboard workspace exists (package.json today only covers docs tooling — see docs/dev-setup.md and .github/workflows/docs.yml). -->
 
 ## Branches
 
@@ -131,7 +86,7 @@ Two things get a hard "no" regardless of how good the code is:
 1. **It can lose or strand funds.** Rounding that doesn't conserve value, a path where an earned balance becomes unwithdrawable, an unbounded loop or collection that can push a withdrawal past the transaction resource limit. If your change touches accrual math or storage layout, expect close review and expect to be asked for property tests.
 2. **It gives someone power they shouldn't have.** An admin who can pause withdrawals, an approver who can redirect funds, an upgrade path with no stated policy. Read [docs/architecture.md](docs/architecture.md#authorization).
 
-Beyond that, review is about clarity. Contract code is read far more often than written, and it's read by auditors who are trying to break it. Prefer the obvious implementation over the clever one. If a function needs a comment to explain *what* it does, it probably needs a different shape; comments explaining *why* are always welcome.
+Beyond that, review is about clarity. Contract code is read far more often than written, and it's read by auditors who are trying to break it. Prefer the obvious implementation over the clever one. If a function needs a comment to explain _what_ it does, it probably needs a different shape; comments explaining _why_ are always welcome.
 
 Reviews aim for a first response within a few days. If a PR goes quiet longer than that, ping it — that's a maintainer failure, not rudeness on your part.
 
