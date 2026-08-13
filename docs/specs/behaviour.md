@@ -198,14 +198,14 @@ And deposit (1,000,000) == withdrawn (1,000,000) + refunded (0) + remaining_in_c
 ### Scenario: withdraw is reduced by an unmet milestone gate
 
 ```gherkin
-Given the Alice/Bob stream from concepts.md: base=1,800,000,000 (in millistroops for readability, see concepts.md for the full stroop figures), milestone=1,200,000,000, duration 30 days
+Given the Alice/Bob stream from concepts.md: base=18,000,000,000, milestone=12,000,000,000, duration 30 days
 And now = day 10 (elapsed = 1/3 of duration), milestone unmet
-Then streamed_total = 1,000,000,000, held = 400,000,000 (the milestone's streamed-to-date, locked)
+Then streamed_total = 10,000,000,000, held = 4,000,000,000 (the milestone's streamed-to-date, locked)
 When the recipient calls withdraw()
-Then claimable = 1,000,000,000 - 0 - 400,000,000 = 600,000,000
-And the contract pays the recipient 600,000,000, not the full 1,000,000,000 that has streamed
-And withdrawn becomes 600,000,000
-And deposit == withdrawn (600,000,000) + refunded (0) + remaining_in_contract (2,400,000,000)
+Then claimable = 10,000,000,000 - 0 - 4,000,000,000 = 6,000,000,000
+And the contract pays the recipient 6,000,000,000, not the full 10,000,000,000 that has streamed
+And withdrawn becomes 6,000,000,000
+And deposit == withdrawn (6,000,000,000) + refunded (0) + remaining_in_contract (24,000,000,000)
 ```
 
 ### Scenario: withdraw after cancellation pays the frozen earned balance
@@ -265,12 +265,13 @@ And deposit (100) == withdrawn (100) + refunded (0) + remaining_in_contract (0),
 ### Scenario: happy path — approval releases accrued-to-date, not just future accrual
 
 ```gherkin
-Given the Alice/Bob stream at day 18 (elapsed 1,555,200 of 2,592,000): streamed_total=1,800,000,000, milestone streamed-to-date=720,000,000 and unapproved (held), base streamed=1,080,000,000, withdrawn=600,000,000 (from an earlier partial withdrawal)
+Given the Alice/Bob stream at day 18 (elapsed 1,555,200 of 2,592,000): streamed_total=18,000,000,000, milestone streamed-to-date=7,200,000,000 and unapproved (held), base streamed=10,800,000,000, withdrawn=6,000,000,000 (from an earlier partial withdrawal)
 When the approver calls approve_milestone(milestone_id)
 Then the milestone's state becomes met
-And held drops from 720,000,000 to 0
-And claimable becomes 1,800,000,000 - 600,000,000 - 0 = 1,200,000,000 — including the 720,000,000 that accrued while the gate was shut, released all at once
+And held drops from 7,200,000,000 to 0
+And claimable becomes 18,000,000,000 - 6,000,000,000 - 0 = 12,000,000,000 — including the 7,200,000,000 that accrued while the gate was shut, released all at once
 And no funds move yet (approve_milestone only changes claimability; withdraw moves funds)
+And deposit (30,000,000,000) == withdrawn (6,000,000,000) + refunded (0) + remaining_in_contract (24,000,000,000) — unchanged by this call, holding trivially because approve_milestone moves claimability, not funds
 ```
 
 ### Scenario: rejected — approve_milestone is only callable by that milestone's named approver
@@ -290,6 +291,7 @@ Then streamed_total for the milestone tranche = 1,200,000,000 (end-of-stream spe
 When the approver calls approve_milestone(milestone_id)
 Then held drops to 0 and the full 1,200,000,000 becomes claimable immediately
 And the recipient does not receive any amount beyond the milestone's own 1,200,000,000 — approval unlocks, it does not extend the stream or add bonus time
+And whatever this stream's deposit is, deposit == withdrawn + refunded + remaining_in_contract holds unchanged — approve_milestone moves no funds, only claimability, so the invariant holds trivially here regardless of the other tranches' figures
 ```
 
 ### Scenario: approving a milestone on an already-cancelled stream is rejected
@@ -301,6 +303,8 @@ When the approver calls approve_milestone(milestone_id)
 Then the call is rejected — there is nothing left for the approval to release, and approving it would either be a no-op or would incorrectly manufacture claimable balance from funds no longer held by the contract for this stream
 And the milestone's state and the stream's balances are unchanged
 ```
+
+Note on why this one is marked decided while "cancel after end" below is marked `UNDECIDED`: both rest on the same class of evidence — the lifecycle diagram in architecture.md draws no arrow for either transition. What tips this one to a decided answer is the extra, substantive argument above: cancel has already moved the milestone's funds out of the contract and back to the sender, so there is a concrete reason approval must fail rather than just an absence of a diagram arrow. "Cancel after end" has no equivalent argument pointing either way, which is exactly why it stays `UNDECIDED` instead.
 
 ### Scenario: double approval of an already-met milestone
 
@@ -367,24 +371,25 @@ Then the outcome is UNDECIDED — see Undecided cases at the end of this documen
 ### Scenario: cancel with an unmet milestone in flight — the gated tranche returns to the sender, not just its unaccrued fraction
 
 ```gherkin
-Given the Alice/Bob stream at day 10 (elapsed 864,000 of 2,592,000): base streamed=600,000,000, milestone streamed-to-date=400,000,000 and unapproved (held), withdrawn=600,000,000 (recipient already withdrew the day-10 base claimable)
+Given the Alice/Bob stream at day 10 (elapsed 864,000 of 2,592,000): base streamed=6,000,000,000, milestone streamed-to-date=4,000,000,000 and unapproved (held), withdrawn=6,000,000,000 (recipient already withdrew the day-10 base claimable)
 When the sender calls cancel()
-Then the base tranche's unstreamed remainder (1,800,000,000 - 600,000,000 = 1,200,000,000) returns to the sender
-And the milestone tranche is treated as entirely unstreamed and returns to the sender in full: 1,200,000,000 (its whole amount, including the 400,000,000 that had already accrued while the gate was shut — an unmet milestone is work that did not happen, so even the accrued-but-locked portion is forfeit, not just the not-yet-accrued portion)
-And total refund to the sender = 1,200,000,000 + 1,200,000,000 = 2,400,000,000
-And the recipient keeps their already-withdrawn 600,000,000 and has nothing further claimable from this stream
-And deposit (3,000,000,000) == withdrawn (600,000,000) + refunded (2,400,000,000) + remaining_in_contract (0)
+Then the base tranche's unstreamed remainder (18,000,000,000 - 6,000,000,000 = 12,000,000,000) returns to the sender
+And the milestone tranche is treated as entirely unstreamed and returns to the sender in full: 12,000,000,000 (its whole amount, including the 4,000,000,000 that had already accrued while the gate was shut — an unmet milestone is work that did not happen, so even the accrued-but-locked portion is forfeit, not just the not-yet-accrued portion)
+And total refund to the sender = 12,000,000,000 + 12,000,000,000 = 24,000,000,000
+And the recipient keeps their already-withdrawn 6,000,000,000 and has nothing further claimable from this stream
+And deposit (30,000,000,000) == withdrawn (6,000,000,000) + refunded (24,000,000,000) + remaining_in_contract (0)
 ```
 
 ### Scenario: cancel with a milestone already approved before cancellation
 
 ```gherkin
-Given a stream with a milestone approved before cancel is called, so its streamed amount is already part of ordinary claimable rather than held
-And now is partway through the stream when cancel is called
+Given the Alice/Bob stream at day 20 (elapsed 1,728,000 of 2,592,000, two-thirds through): base streamed = 18,000,000,000 * 2/3 = 12,000,000,000, milestone streamed = 12,000,000,000 * 2/3 = 8,000,000,000, streamed_total = 20,000,000,000
+And the milestone was approved back at day 18 (per the approve_milestone happy-path scenario above), so at day 20 it is ordinary streamed balance, not held
+And withdrawn = 12,000,000,000 (the recipient withdrew the full day-18 claimable right after approval)
 When the sender calls cancel()
-Then the approved milestone's accrued-to-date amount is treated exactly like the base tranche: it stays with the recipient (frozen claimable), it is not clawed back
-And only the still-unstreamed remainder of the base and the approved-milestone tranche returns to the sender — there is no unmet-milestone forfeiture here, because there is no unmet milestone
-And deposit == withdrawn + refunded + remaining_in_contract holds with these adjusted figures
+Then the approved milestone's accrued-to-date amount is treated exactly like the base tranche: streamed_total (20,000,000,000) minus withdrawn (12,000,000,000) is 8,000,000,000 of frozen, still-owed claimable that stays with the recipient — it is not clawed back
+And only the still-unstreamed remainder of both tranches combined returns to the sender: deposit (30,000,000,000) - streamed_total (20,000,000,000) = 10,000,000,000 — there is no unmet-milestone forfeiture here, because there is no unmet milestone
+And deposit (30,000,000,000) == withdrawn (12,000,000,000) + refunded (10,000,000,000) + remaining_in_contract (8,000,000,000, the recipient's frozen claimable still to be withdrawn)
 ```
 
 ---
