@@ -9,13 +9,13 @@ StelFlow is a payment-streaming protocol for Stellar/Soroban: a sender locks a S
 
 Stellar has fast, cheap settlement and a native stablecoin story, but recurring value transfer on it is still a scheduling problem. Today you either send periodic payments from a bot or a treasury multisig, or you hold funds in an escrow that releases in a lump on approval. The first requires a live signer and trust that someone keeps paying; the second gives the recipient nothing until the whole tranche clears.
 
-EVM has had continuous streaming for years — Sablier is the reference implementation, and vesting, payroll, and grant tooling grew on top of it. Soroban has escrow primitives (notably [Trustless Work](https://docs.trustlesswork.com/)) but no general streaming primitive underneath them. StelFlow is meant to be that primitive, with one addition that pure streaming lacks: most real disbursements are not purely time-based. A grant is time-based *and* conditional. A vesting schedule has a cliff. A DAO contributor gets paid over the quarter but the last tranche depends on shipping.
+EVM has had continuous streaming for years — Sablier is the reference implementation, and vesting, payroll, and grant tooling grew on top of it. Soroban has escrow primitives (notably [Trustless Work](https://docs.trustlesswork.com/)) but no general streaming primitive underneath them. StelFlow is meant to be that primitive, with one addition that pure streaming lacks: most real disbursements are not purely time-based. A grant is time-based _and_ conditional. A vesting schedule has a cliff. A DAO contributor gets paid over the quarter but the last tranche depends on shipping.
 
 So StelFlow combines three things that usually live in separate contracts:
 
 - **Continuous accrual** — the recipient's claimable balance is a function of ledger time, computed on read, not pushed on a schedule.
 - **Milestone gates** — a stream segment can be held until an approver marks its milestone met. Accrual continues; withdrawal does not.
-- **Cancel and [clawback](docs/glossary.md#clawback-stelflow-sense)** — the sender can stop a stream and recover the *unstreamed* remainder. Already-accrued funds stay with the recipient.
+- **Cancel and [clawback](docs/glossary.md#clawback-stelflow-sense)** — the sender can stop a stream and recover the _unstreamed_ remainder. Already-accrued funds stay with the recipient.
 
 Target uses: grant disbursement, DAO payroll, and vesting with cliffs — the cases where a lump-sum escrow is too coarse and a cron job is too fragile.
 
@@ -68,14 +68,14 @@ Dashed components are planned and unbuilt. [docs/architecture.md](docs/architect
 
 ## Stack
 
-| Layer | Choice | Notes |
-|---|---|---|
-| Contracts | Rust + `soroban-sdk` | Built to the `wasm32v1-none` target; needs Rust 1.84+ |
-| Assets | SEP-41 token interface | Works with the Stellar Asset Contract (SAC) and any SEP-41 token |
-| Tooling | Stellar CLI (`stellar`) | Formerly `soroban-cli`; `stellar contract build`, `stellar contract deploy` |
-| SDK | TypeScript + `@stellar/stellar-sdk` | Typed bindings generated from the contract spec |
-| Dashboard | React | <!-- TODO(maintainer): confirm framework — Next.js vs Vite — before the dashboard phase opens --> |
-| Indexer | <!-- TODO(maintainer): pick runtime + datastore (e.g. TypeScript + Postgres) and record it here --> | Ingests contract events via Stellar RPC |
+| Layer     | Choice                                                                                              | Notes                                                                                             |
+| --------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Contracts | Rust + `soroban-sdk`                                                                                | Built to the `wasm32v1-none` target; needs Rust 1.84+                                             |
+| Assets    | SEP-41 token interface                                                                              | Works with the Stellar Asset Contract (SAC) and any SEP-41 token                                  |
+| Tooling   | Stellar CLI (`stellar`)                                                                             | Formerly `soroban-cli`; `stellar contract build`, `stellar contract deploy`                       |
+| SDK       | TypeScript + `@stellar/stellar-sdk`                                                                 | Typed bindings generated from the contract spec                                                   |
+| Dashboard | React                                                                                               | <!-- TODO(maintainer): confirm framework — Next.js vs Vite — before the dashboard phase opens --> |
+| Indexer   | <!-- TODO(maintainer): pick runtime + datastore (e.g. TypeScript + Postgres) and record it here --> | Ingests contract events via Stellar RPC                                                           |
 
 ## Docs
 

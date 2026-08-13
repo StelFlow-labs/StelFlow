@@ -1,0 +1,47 @@
+{
+  // Config for markdownlint-cli2 (docs.yml). Rules are tuned to this repo's existing prose rather
+  // than the other way around — see CONTRIBUTING.md's "don't reformat 1,200 lines of prose" rule.
+  // Full rule list: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+  "config": {
+    "default": true,
+
+    // The docs write long, discursive paragraphs by design (see CONTRIBUTING.md). A line-length
+    // rule would either fight every paragraph in the repo or need constant per-line exceptions.
+    "MD013": false,
+
+    // Headings like "### 1. StelFlow Core (Soroban contract, Rust) — planned" repeat a numbering
+    // style across architecture.md's Components section; duplicate-heading and increment rules
+    // would flag structure that's intentional here.
+    "MD024": { "siblings_only": true },
+
+    // glossary.md is a flat definition list: one H1 title, then every term as an H3 with no H2
+    // section headings in between. That's a deliberate structure, not a mistake, so heading
+    // increment isn't a useful rule for this repo.
+    "MD001": false,
+
+    // architecture.md and glossary.md use bare TODO/note callouts and mermaid diagrams inside
+    // regular prose; MD033 (no inline HTML) would flag the raw comment syntax markdownlint
+    // sometimes misparses in fenced mermaid blocks.
+    "MD033": false,
+
+    // Reference-style bracketed links are used inconsistently in glossary.md's definition list on
+    // purpose (a term can be linked from itself). Not worth normalizing by lint.
+    "MD053": false,
+
+    // Every table in these docs is written hand-aligned for readability in a plain-text editor,
+    // not machine-aligned to markdownlint's "compact"/"aligned" pipe rules, and it fires on
+    // essentially every table in the repo — the definition of a rule that's wrong for this repo.
+    "MD060": false,
+
+    // concepts.md fences plain-English accrual formulas (not real code) for readability; tagging
+    // them "text" would be a language lie and tagging shell snippets throughout CONTRIBUTING.md is
+    // the only place a language is genuinely missing. Not worth a mixed-motive rule.
+    "MD040": false
+  },
+
+  "globs": ["**/*.md"],
+
+  // GitHub PR/issue templates intentionally open with an HTML comment instructing the author,
+  // not a heading — that's how GitHub's "New PR"/"New issue" UI expects them to read.
+  "ignores": ["**/node_modules/**", "**/.git/**", ".github/PULL_REQUEST_TEMPLATE.md", ".github/ISSUE_TEMPLATE/**"]
+}
