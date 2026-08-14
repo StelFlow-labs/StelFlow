@@ -14,7 +14,7 @@ Do not use anything in this repository with real value until this file says a de
 
 Preferred: GitHub's [private vulnerability reporting](https://github.com/StelFlow-labs/StelFlow/security/advisories/new). That creates a private advisory only maintainers can see.
 
-If you can't or won't use GitHub, email **jethroirmiya@gmail.com** with `[StelFlow security]` in the subject.
+If you can't or won't use GitHub, email **<jethroirmiya@gmail.com>** with `[StelFlow security]` in the subject.
 
 <!-- TODO(maintainer): a PGP key is optional but some researchers expect one. Publish a fingerprint here if you set one up. -->
 
