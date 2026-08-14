@@ -410,11 +410,13 @@ argue about without hunting through the scenarios.
    `Completed`. That suggests cancel might simply be disallowed once `now >= end`, but nothing states
    this explicitly, and functionally a no-op cancel (refund = 0, since nothing is unstreamed) would be
    harmless if allowed. Whether the call reverts or succeeds-as-a-no-op is unspecified.
-3. **Milestone revocation.** Already flagged as [an open question in
-   architecture.md](../architecture.md#open-questions) and as a TODO in concepts.md: can an approver
-   un-approve a met milestone, and if funds were already withdrawn under that approval, what happens to
-   them? No scenario above covers revocation because there is no entry point for it yet to write a
-   scenario against.
+3. ~~**Milestone revocation.**~~ **Settled — no revocation.** Milestone state is monotonic and `Met`
+   is terminal, decided in [research/milestone-revocation.md](../research/milestone-revocation.md).
+   There is no revocation entry point to write a scenario against, and now there never will be, so
+   this stops being an open case. Two consequences worth holding while writing the rest of these
+   scenarios: `claimable` is non-decreasing in approvals and cannot be driven negative by a milestone
+   action, and case 1 above is narrowed — with no state change available, a second `approve_milestone`
+   is only a question of which failure signal is friendlier.
 4. **`create_stream` and non-standard transfer behaviour.** architecture.md flags with a TODO whether
    `create_stream` verifies the balance actually received against the requested `total` (to catch
    fee-on-transfer or rebasing tokens) or whether such assets are simply documented as unsupported. This
