@@ -385,11 +385,11 @@ And deposit (30,000,000,000) == withdrawn (6,000,000,000) + refunded (24,000,000
 ```gherkin
 Given the Alice/Bob stream at day 20 (elapsed 1,728,000 of 2,592,000, two-thirds through): base streamed = 18,000,000,000 * 2/3 = 12,000,000,000, milestone streamed = 12,000,000,000 * 2/3 = 8,000,000,000, streamed_total = 20,000,000,000
 And the milestone was approved back at day 18 (per the approve_milestone happy-path scenario above), so at day 20 it is ordinary streamed balance, not held
-And withdrawn = 12,000,000,000 (the recipient withdrew the full day-18 claimable right after approval)
+And withdrawn = 18,000,000,000 (cumulative: 6,000,000,000 taken at day 10, plus the full 12,000,000,000 day-18 claimable withdrawn right after approval)
 When the sender calls cancel()
-Then the approved milestone's accrued-to-date amount is treated exactly like the base tranche: streamed_total (20,000,000,000) minus withdrawn (12,000,000,000) is 8,000,000,000 of frozen, still-owed claimable that stays with the recipient — it is not clawed back
+Then the approved milestone's accrued-to-date amount is treated exactly like the base tranche: streamed_total (20,000,000,000) minus withdrawn (18,000,000,000) is 2,000,000,000 of frozen, still-owed claimable that stays with the recipient — it is not clawed back
 And only the still-unstreamed remainder of both tranches combined returns to the sender: deposit (30,000,000,000) - streamed_total (20,000,000,000) = 10,000,000,000 — there is no unmet-milestone forfeiture here, because there is no unmet milestone
-And deposit (30,000,000,000) == withdrawn (12,000,000,000) + refunded (10,000,000,000) + remaining_in_contract (8,000,000,000, the recipient's frozen claimable still to be withdrawn)
+And deposit (30,000,000,000) == withdrawn (18,000,000,000) + refunded (10,000,000,000) + remaining_in_contract (2,000,000,000, the recipient's frozen claimable still to be withdrawn)
 ```
 
 ---
