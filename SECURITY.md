@@ -55,12 +55,17 @@ You will be credited in the advisory and in [CONTRIBUTORS.md](CONTRIBUTORS.md) u
 **Out of scope:**
 
 - Stellar Core, Soroban host functions, Stellar RPC — report those to the [Stellar Development Foundation](https://github.com/stellar/stellar-core/security/policy)
-- Third-party assets and their issuers, including issuer clawback. If an asset has clawback enabled, its issuer can remove funds from a live stream. That's an asset property, disclosed in [docs/concepts.md](docs/concepts.md#cancellation-and-clawback), not a StelFlow bug
+- Third-party assets and their issuers, including issuer clawback. If an asset has clawback enabled, its issuer can remove funds from a live stream. That's an asset property, disclosed in [docs/concepts.md](docs/concepts.md#cancellation-and-clawback), not a StelFlow bug — the threat model covers it as [T7](docs/research/threat-model.md#t7--issuer-clawback), accepted rather than fixable
 - Trustless Work's contracts — report to [Trustless Work](https://github.com/Trustless-Work)
 - Wallets, and phishing that doesn't involve a flaw in our code
 - Findings from an automated scanner with no demonstrated impact
 
 ## What we care most about
+
+The reasoning behind this list, threat by threat, is in
+[docs/research/threat-model.md](docs/research/threat-model.md) — including which risks are accepted
+rather than mitigated, and the design decisions that are still open. Start there if you're looking
+for somewhere to dig.
 
 If you're deciding where to look, these are the classes that would hurt most:
 
