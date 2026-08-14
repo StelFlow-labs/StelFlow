@@ -136,6 +136,8 @@ Soroban has three storage types, and picking wrong here is fatal:
 
 So: **one `persistent` entry per stream, keyed by stream ID.** Contract-wide config goes in `instance` storage, because it's small and needed on every call.
 
+Milestone state inside that entry is a **monotonic enum with no reverse transition** — `Met` is terminal, per [open question 2](#open-questions). That keeps a milestone to roughly its amount, approver, and one small state field. A revocable milestone would have needed the amount released under each approval and a revocation counter as well, per milestone, which pushes directly against the read budget below and against restore cost — the same pressure the milestone cap exists to manage.
+
 The real design pressure is that persistent entries still have a TTL and streams are long-lived. A 4-year vesting stream with a 1-year cliff will sit untouched for longer than a default TTL window. The design has to handle this rather than hope:
 
 - Every state-changing call (`withdraw`, `approve_milestone`) calls `extend_ttl` on the stream's entry. Active streams keep themselves alive for free.
@@ -191,7 +193,7 @@ The intended split: Trustless Work decides *whether* a condition is met; StelFlo
 Answers wanted. These are good places to argue with the design — open an issue.
 
 1. **Stream IDs.** Monotonic `u64` counter, or a hash of the creation parameters? A counter needs a writable global entry on every creation, which is a write-contention point. A hash is contention-free but unfriendly to read.
-2. **Milestone revocation.** Can an approver un-approve? If so, what about funds already withdrawn under the approval? (Also flagged in [concepts.md](concepts.md).)
+2. ~~**Milestone revocation.**~~ **Settled: no.** Milestone state is monotonic and `Met` is terminal. Re-locking a tranche after a withdrawal has settled would charge the shortfall against the recipient's *other* tranches, because `withdrawn` is one stream-wide counter — worked through in [research/milestone-revocation.md](research/milestone-revocation.md). Storage consequence recorded under [Storage type and TTL](#storage-type-and-ttl).
 3. **Multiple recipients per stream.** Splitting a stream N ways is a real payroll need, but it multiplies the per-transaction entry cost. Probably out of scope for v1 — argue otherwise if you disagree.
 4. **Upgradeability.** Soroban contracts can upgrade their own Wasm. For a custody contract, who holds that key, and is it worth the trust cost? A non-upgradeable contract with a documented migration path may be the better answer.
 5. **Pausing.** Is there an emergency stop, and if so, can it stop *withdrawals*? An emergency stop that can freeze a recipient's earned funds is a rug vector with good intentions.

@@ -75,13 +75,15 @@ The recipient always has the base stream to live on. The gated tranches accrue i
 
 The approver is a role, not necessarily the sender — it can be a grant committee, a multisig, or a Trustless Work escrow acting as the arbiter. That last case is the point of the integration: Trustless Work already implements escrow with milestones, approvals, and disputes on Soroban. StelFlow does not want to reimplement dispute resolution. It wants to be the thing that pays out continuously while that process runs.
 
-<!-- TODO(maintainer): decide and document whether an approver can *revoke* a met milestone, and what happens to funds already withdrawn under it. This changes the storage model, so it needs an answer before Phase 1. -->
+**Approval is final. A met milestone cannot be un-met.** The approver's only power is to release, and once a tranche is released it stays released — there is no revocation, and no way for anyone to reduce what the recipient has already become entitled to. A sender who wants a way out needs a [cancelable](glossary.md#cancelable) stream, which ends the whole stream rather than re-locking one tranche.
+
+That cuts both ways, and the cost is worth knowing before you name an approver: if a milestone is approved in error, StelFlow offers no remedy. Where a real dispute process is needed, name a Trustless Work escrow as the approver and let it withhold approval until its own process concludes. Reasoning and the alternatives considered: [research/milestone-revocation.md](research/milestone-revocation.md).
 
 ### What a gate does not do
 
 - It does not pause accrual. Time keeps moving; only claimability is held.
 - It does not extend the stream. If a milestone is approved after the end time, the recipient gets its full amount immediately — they don't get extra time.
-- It does not give the approver custody. The approver flips a flag. They cannot redirect funds.
+- It does not give the approver custody. The approver flips a flag, once, in one direction. They cannot redirect funds, and they cannot take back what they released.
 
 ## A worked example: Alice and Bob
 
