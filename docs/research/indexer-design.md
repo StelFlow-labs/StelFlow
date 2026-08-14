@@ -1,6 +1,6 @@
 # Indexer design
 
-This resolves the design work [docs/architecture.md § 2](../architecture.md#2-indexer-off-chain) deferred: runtime and datastore, the RPC event-retention backstop, and the cursor/reorg/idempotency mechanics that make [Phase 3](../../ROADMAP.md#phase-3--indexer-) rebuildable. Nothing here is implemented — this is the decision record Phase 3 builds against.
+This resolves the design work [docs/architecture.md § 2](../architecture.md#2-indexer-off-chain--planned) deferred: runtime and datastore, the RPC event-retention backstop, and the cursor/reorg/idempotency mechanics that make [Phase 3](../../ROADMAP.md#phase-3--indexer-) rebuildable. Nothing here is implemented — this is the decision record Phase 3 builds against.
 
 **Ground rule, repeated because it constrains every choice below:** the indexer is a cache, never an authority. If the indexer disagrees with the chain, the chain is right, and the dashboard's headline claimable-balance number must come from simulating a contract read, not from this database. Everything the indexer stores is for history, lists, and aggregates — things the contract genuinely cannot answer about itself.
 
@@ -44,7 +44,7 @@ Deduping raw events isn't sufficient by itself — the materialized `streams` ro
 1. **Contract events carry absolute state, not deltas.** A `withdraw` event should emit the resulting `withdrawn` total (and a `milestone_approved` event the resulting status), not "+N". Applying the same absolute-value event twice sets the same value twice — a no-op the second time, by construction, with no counter to accidentally increment. This is a requirement on the Phase 1 event design ([ROADMAP Phase 1](../../ROADMAP.md#phase-1--contract-core-) already flags "events designed for the indexer before the indexer exists" — this is what that needs to mean).
 2. **Projection is guarded by a monotonic watermark.** Each materialized row (`streams.last_applied_event_id`, `milestones.last_applied_event_id`) only accepts an incoming event if its `event_id` is greater than the one already applied. Combined with (1), reprocessing, out-of-order delivery within a backfill range, or replaying the entire log from scratch all converge to the identical final row.
 
-Net effect: idempotency isn't a dedup step bolted onto ingestion, it's a property of the fold function itself. See [§7](#7-rebuildability) — this is also what makes rebuild-from-scratch safe.
+Net effect: idempotency isn't a dedup step bolted onto ingestion, it's a property of the fold function itself. See [§6](#6-rebuildability) — this is also what makes rebuild-from-scratch safe.
 
 ## 5. Rollback / finality handling, explicitly
 
@@ -56,12 +56,14 @@ Stellar's consensus (SCP) gives deterministic finality once a ledger closes and 
 Neither of those is a chain rollback, but both can make the indexer briefly disagree with a moment later than it should. The design treats this as cheap insurance rather than a hard problem:
 
 - Track `latest_seen_ledger` (whatever the poller has ingested) separately from `latest_confirmed_ledger = latest_seen_ledger - CONFIRMATION_LEDGERS`, where `CONFIRMATION_LEDGERS` is a small config value (starting point: 2 — about 10 seconds at Stellar's close rate). This mirrors the pattern architecture.md already uses for tunables: "these are tunable and network-dependent, so they belong in config, not constants."
-- `chain_events` rows carry a `confirmed` flag, flipped once their ledger passes the confirmation depth. Reconciliation (§8) and any aggregate/analytics read use `confirmed` data; low-latency UI reads (e.g. "your withdrawal was seen") can use unconfirmed data if the caller explicitly wants optimism over certainty.
+- Confirmation is a **derived predicate, not a stored flag**: an event is confirmed when `chain_events.ledger_sequence <= latest_confirmed_ledger`, evaluated at read time against `ingest_checkpoints`. Reconciliation (§8) and any aggregate/analytics read filter on it; low-latency UI reads (e.g. "your withdrawal was seen") can ignore it if the caller explicitly wants optimism over certainty.
+
+  A stored `confirmed BOOLEAN`, flipped by a job once its ledger passed the depth, would be the obvious shape and it is the wrong one — it writes to `chain_events`, which §6 requires never be mutated, and that requirement is load-bearing rather than stylistic. Replay would not reproduce the column: after truncating and re-folding, a row's flag would reflect whenever the flipping job last ran rather than anything in the log, so "wipe and replay reaches identical state" would be false by construction. Backfilled rows make it worse — they arrive describing ledgers that are already long confirmed, so they would need the flag set retroactively on insert by a different rule than live rows use. As a predicate over `ledger_sequence` there is nothing to write, nothing to backfill, and nothing to get out of step: it is correct for rows from any source, at any age, immediately.
 - No explicit "undo" path exists, and none is needed: because ingestion is idempotent and projection is a pure fold over an ordered, deduplicated log (§4), the correct response to any inconsistency — RPC gave conflicting data, a provider was switched, a bug is fixed — is the same rebuild procedure as a cold start, not bespoke rollback logic.
 
 ## 6. Rebuildability
 
-ROADMAP's Phase 3 done-condition is that wiping the database and replaying reaches identical state. That's only true if the schema is structured so replay is a pure function of the event log, which is why the schema (§9) splits into two layers:
+ROADMAP's Phase 3 done-condition is that wiping the database and replaying reaches identical state. That's only true if the schema is structured so replay is a pure function of the event log, which is why the schema (§10) splits into two layers:
 
 - **`chain_events`** — append-only, the actual source of truth for replay. Never mutated, only inserted (deduped by `event_id`).
 - **Everything else** (`streams`, `withdrawals`, `milestones`, `milestone_transitions`) — derived, rebuilt by folding `chain_events` in `event_id` order. Nothing ever writes to these tables except the projector, and the projector's only input is `chain_events`.
@@ -78,7 +80,7 @@ Stellar RPC's event retention is a bounded window (commonly quoted as 7 days, bu
 
 Backfill jobs get their own `ingest_checkpoints` row (a ledger range rather than a live cursor) so a backfill can be paused, resumed, or re-run without touching the live poller's checkpoint.
 
-This resolves the TODO in [docs/architecture.md § 2](../architecture.md#2-indexer-off-chain): **Galexie-backed self-hosted backfill, with Hubble as the fast one-off cold-start path**, both feeding the same decode-and-dedup pipeline live polling uses.
+This resolves the TODO in [docs/architecture.md § 2](../architecture.md#2-indexer-off-chain--planned): **Galexie-backed self-hosted backfill, with Hubble as the fast one-off cold-start path**, both feeding the same decode-and-dedup pipeline live polling uses.
 
 ## 8. Reconciliation against on-chain state
 
@@ -151,7 +153,10 @@ CREATE TABLE chain_events (
     topic               JSONB NOT NULL,            -- decoded topic segments
     payload             JSONB NOT NULL,            -- decoded event body; carries absolute state, see §4
     source              TEXT NOT NULL,             -- 'rpc' | 'galexie_backfill' | 'hubble_backfill'
-    confirmed           BOOLEAN NOT NULL DEFAULT false,
+    -- No `confirmed` column: confirmation is derived at read time from
+    -- ledger_sequence vs. ingest_checkpoints.latest_confirmed_ledger. Storing it
+    -- would mean updating this table, which §6 forbids, and replay could not
+    -- reproduce it. See §5.
     ingested_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX chain_events_ledger_idx ON chain_events USING BRIN (ledger_close_time);
@@ -159,9 +164,13 @@ CREATE INDEX chain_events_contract_type_idx ON chain_events (contract_id, event_
 
 -- Resume state per ingestion source. Committed in the same transaction as
 -- the chain_events rows it follows — see §3.
+-- latest_confirmed_ledger is this table's 'rpc_poller' row minus the configured
+-- CONFIRMATION_LEDGERS depth; it is the right-hand side of the confirmation
+-- predicate in §5, and is computed rather than stored so there is exactly one
+-- place the depth can be changed.
 CREATE TABLE ingest_checkpoints (
     source              TEXT PRIMARY KEY,          -- 'rpc_poller', or a backfill job id
-    last_ledger_sequence BIGINT NOT NULL,
+    last_ledger_sequence BIGINT NOT NULL,          -- latest_seen_ledger for this source
     last_cursor         TEXT,                       -- opaque RPC pagination token
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -247,6 +256,6 @@ CREATE TABLE reconciliation_runs (
 
 ## Next
 
-- [architecture.md § 2](../architecture.md#2-indexer-off-chain) — the component this design resolves.
+- [architecture.md § 2](../architecture.md#2-indexer-off-chain--planned) — the component this design resolves.
 - [ROADMAP.md § Phase 3](../../ROADMAP.md#phase-3--indexer-) — the checklist this design is meant to unblock.
 - [SECURITY.md § Scope](../../SECURITY.md#scope) — why reconciliation exists.
