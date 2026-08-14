@@ -226,4 +226,5 @@ The last row is the one StelFlow is built for.
 
 - [glossary.md](glossary.md) — every term on this page in one place, plus the Soroban vocabulary.
 - [architecture.md](architecture.md) — how this is actually built on Soroban, and which constraints bend the design.
+- [specs/behaviour.md](specs/behaviour.md) — the semantics on this page turned into Given/When/Then scenarios, including the awkward cases.
 - [../ROADMAP.md](../ROADMAP.md) — the order it gets built in.

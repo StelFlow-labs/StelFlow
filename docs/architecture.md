@@ -197,5 +197,6 @@ Answers wanted. These are good places to argue with the design — open an issue
 ## Next
 
 - [glossary.md](glossary.md) — definitions for the vocabulary on this page.
+- [specs/behaviour.md](specs/behaviour.md) — Given/When/Then scenarios for the four entry points, including the cases this page's open questions leave undecided.
 - [../ROADMAP.md](../ROADMAP.md) — build order.
 - [../CONTRIBUTING.md](../CONTRIBUTING.md) — how to pick something up.
