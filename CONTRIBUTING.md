@@ -10,13 +10,13 @@ Read [docs/architecture.md](docs/architecture.md) before contributing code. It e
 
 **Picking up an issue.** Issues are labeled by difficulty and area:
 
-| Label                                                                               | What it means                                                                                          |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `good first issue`                                                                  | Scoped so you don't need the whole design in your head. Every one has acceptance criteria written out. |
-| `help wanted`                                                                       | Real work, needs some context.                                                                         |
-| `design`                                                                            | No code — a decision that needs input.                                                                 |
-| `area: contract` / `area: sdk` / `area: indexer` / `area: dashboard` / `area: docs` | Which part of the system.                                                                              |
-| `blocked`                                                                           | Depends on an unfinished phase. Don't start these.                                                     |
+| Label | What it means |
+|---|---|
+| `good first issue` | Scoped so you don't need the whole design in your head. Every one has acceptance criteria written out. |
+| `help wanted` | Real work, needs some context. |
+| `design` | No code — a decision that needs input. |
+| `area: contract` / `area: sdk` / `area: indexer` / `area: dashboard` / `area: docs` | Which part of the system. |
+| `blocked` | Depends on an unfinished phase. Don't start these. |
 
 **Before you write code, comment on the issue saying you're taking it.** A maintainer will assign it to you. This costs you ten seconds and prevents two people shipping the same thing. If you go quiet for two weeks the issue gets unassigned — no hard feelings, just say so if you want it back.
 
@@ -131,7 +131,7 @@ Two things get a hard "no" regardless of how good the code is:
 1. **It can lose or strand funds.** Rounding that doesn't conserve value, a path where an earned balance becomes unwithdrawable, an unbounded loop or collection that can push a withdrawal past the transaction resource limit. If your change touches accrual math or storage layout, expect close review and expect to be asked for property tests.
 2. **It gives someone power they shouldn't have.** An admin who can pause withdrawals, an approver who can redirect funds, an upgrade path with no stated policy. Read [docs/architecture.md](docs/architecture.md#authorization).
 
-Beyond that, review is about clarity. Contract code is read far more often than written, and it's read by auditors who are trying to break it. Prefer the obvious implementation over the clever one. If a function needs a comment to explain _what_ it does, it probably needs a different shape; comments explaining _why_ are always welcome.
+Beyond that, review is about clarity. Contract code is read far more often than written, and it's read by auditors who are trying to break it. Prefer the obvious implementation over the clever one. If a function needs a comment to explain *what* it does, it probably needs a different shape; comments explaining *why* are always welcome.
 
 Reviews aim for a first response within a few days. If a PR goes quiet longer than that, ping it — that's a maintainer failure, not rudeness on your part.
 

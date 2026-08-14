@@ -104,11 +104,11 @@ A cliff does not appear as a state. It's a predicate inside the claimable calcul
 
 ## How Soroban shapes the design
 
-This is the part that matters. Streaming is easy; streaming _on this chain_ has four specific constraints that dictate the storage layout and the API.
+This is the part that matters. Streaming is easy; streaming *on this chain* has four specific constraints that dictate the storage layout and the API.
 
 ### Ledger time is the clock
 
-`env.ledger().timestamp()` returns the [close time](glossary.md#ledger-close-time) of the ledger executing the transaction, in seconds since the Unix epoch. There is no block number to count and no way to schedule a future call — Soroban has no cron, no keepers, no self-scheduling. That is precisely why a _computed_ stream is the right shape here: the contract never needs to wake up. It only needs to answer correctly whenever someone asks.
+`env.ledger().timestamp()` returns the [close time](glossary.md#ledger-close-time) of the ledger executing the transaction, in seconds since the Unix epoch. There is no block number to count and no way to schedule a future call — Soroban has no cron, no keepers, no self-scheduling. That is precisely why a *computed* stream is the right shape here: the contract never needs to wake up. It only needs to answer correctly whenever someone asks.
 
 Consequences to design around:
 
@@ -126,11 +126,11 @@ Rounding is always down, and the withdrawn counter is the source of truth for wh
 
 Soroban has three storage types, and picking wrong here is fatal:
 
-| Type                                           | Behavior when TTL lapses                                                                                       | Fit for stream state                                                                |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| [`temporary`](glossary.md#temporary-storage)   | **Permanently deleted.** Unrecoverable.                                                                        | No. Deleting a stream deletes custody records for real money.                       |
-| [`instance`](glossary.md#instance-storage)     | Archived with the contract; every entry loads on every call.                                                   | No. All streams would share one entry and every call would pay to load all of them. |
-| [`persistent`](glossary.md#persistent-storage) | [Archived](glossary.md#state-archival), restorable via [`RestoreFootprintOp`](glossary.md#restorefootprintop). | Yes.                                                                                |
+| Type | Behavior when TTL lapses | Fit for stream state |
+|---|---|---|
+| [`temporary`](glossary.md#temporary-storage) | **Permanently deleted.** Unrecoverable. | No. Deleting a stream deletes custody records for real money. |
+| [`instance`](glossary.md#instance-storage) | Archived with the contract; every entry loads on every call. | No. All streams would share one entry and every call would pay to load all of them. |
+| [`persistent`](glossary.md#persistent-storage) | [Archived](glossary.md#state-archival), restorable via [`RestoreFootprintOp`](glossary.md#restorefootprintop). | Yes. |
 
 So: **one `persistent` entry per stream, keyed by stream ID.** Contract-wide config goes in `instance` storage, because it's small and needed on every call.
 
@@ -138,7 +138,7 @@ The real design pressure is that persistent entries still have a TTL and streams
 
 - Every state-changing call (`withdraw`, `approve_milestone`) calls `extend_ttl` on the stream's entry. Active streams keep themselves alive for free.
 - `create_stream` sizes its initial extension to the stream's own cliff/duration rather than a flat default — the contract already has that information, and it's the single biggest lever against a stream that's dormant by design (a long cliff) rather than by neglect.
-- Long-dormant streams _will_ archive anyway — no single extension survives a multi-year gap; see the research doc below for why. That is acceptable, not a bug: archival preserves the entry, and restoration brings it back. The recipient pays a restore fee and withdraws. Nothing is lost.
+- Long-dormant streams *will* archive anyway — no single extension survives a multi-year gap; see the research doc below for why. That is acceptable, not a bug: archival preserves the entry, and restoration brings it back. The recipient pays a restore fee and withdraws. Nothing is lost.
 - The SDK must detect an archived entry and produce a restore-then-withdraw flow, not a confusing "stream not found." This is the single most likely source of bad UX in the project and it needs to be handled in the SDK, not left to the app developer.
 - A `bump_stream` entry point lets anyone extend any stream's TTL, so a sender or a watcher service can keep a dormant stream hot without the recipient acting — but StelFlow itself doesn't operate one; see the research doc for why that's a deliberate scope line, not an oversight.
 
@@ -180,7 +180,7 @@ Every privileged entry point calls `require_auth` on the address that should be 
 
 [Trustless Work](https://docs.trustlesswork.com/) is [escrow](glossary.md#escrow)-as-a-service on Soroban, with milestones, approvals, and disputes already built. StelFlow is not trying to replace it, and shouldn't.
 
-The intended split: Trustless Work decides _whether_ a condition is met; StelFlow decides _how fast_ money moves once it is. A grant program runs its approval and dispute process in a Trustless Work escrow, and that escrow's address is the approver on the StelFlow stream's milestones. The recipient draws a continuous base stream throughout, and gated tranches unlock as the escrow resolves them.
+The intended split: Trustless Work decides *whether* a condition is met; StelFlow decides *how fast* money moves once it is. A grant program runs its approval and dispute process in a Trustless Work escrow, and that escrow's address is the approver on the StelFlow stream's milestones. The recipient draws a continuous base stream throughout, and gated tranches unlock as the escrow resolves them.
 
 <!-- TODO(maintainer): confirm against Trustless Work's current API whether their escrow can make a cross-contract call into an arbitrary approver interface, or whether integration has to be driven by an off-chain agent watching their events. This determines whether the integration is trust-minimized or merely convenient — and it's a load-bearing claim, so verify before it goes in a grant application. -->
 
@@ -192,7 +192,7 @@ Answers wanted. These are good places to argue with the design — open an issue
 2. **Milestone revocation.** Can an approver un-approve? If so, what about funds already withdrawn under the approval? (Also flagged in [concepts.md](concepts.md).)
 3. **Multiple recipients per stream.** Splitting a stream N ways is a real payroll need, but it multiplies the per-transaction entry cost. Probably out of scope for v1 — argue otherwise if you disagree.
 4. **Upgradeability.** Soroban contracts can upgrade their own Wasm. For a custody contract, who holds that key, and is it worth the trust cost? A non-upgradeable contract with a documented migration path may be the better answer.
-5. **Pausing.** Is there an emergency stop, and if so, can it stop _withdrawals_? An emergency stop that can freeze a recipient's earned funds is a rug vector with good intentions.
+5. **Pausing.** Is there an emergency stop, and if so, can it stop *withdrawals*? An emergency stop that can freeze a recipient's earned funds is a rug vector with good intentions.
 
 ## Next
 

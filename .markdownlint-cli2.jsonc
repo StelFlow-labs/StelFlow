@@ -19,23 +19,15 @@
     // increment isn't a useful rule for this repo.
     "MD001": false,
 
-    // architecture.md and glossary.md use bare TODO/note callouts and mermaid diagrams inside
-    // regular prose; MD033 (no inline HTML) would flag the raw comment syntax markdownlint
-    // sometimes misparses in fenced mermaid blocks.
-    "MD033": false,
-
-    // Reference-style bracketed links are used inconsistently in glossary.md's definition list on
-    // purpose (a term can be linked from itself). Not worth normalizing by lint.
-    "MD053": false,
-
-    // Every table in these docs is written hand-aligned for readability in a plain-text editor,
-    // not machine-aligned to markdownlint's "compact"/"aligned" pipe rules, and it fires on
-    // essentially every table in the repo — the definition of a rule that's wrong for this repo.
+    // Every table in these docs is written compact (`|---|---|`, no padding), not machine-aligned
+    // to markdownlint's "compact"/"aligned" pipe style — measured at 94 hits against this repo's
+    // tables with default rules, the definition of a rule that's wrong for this repo's style.
     "MD060": false,
 
-    // concepts.md fences plain-English accrual formulas (not real code) for readability; tagging
-    // them "text" would be a language lie and tagging shell snippets throughout CONTRIBUTING.md is
-    // the only place a language is genuinely missing. Not worth a mixed-motive rule.
+    // concepts.md fences six plain-English accrual formulas (not real code) for readability;
+    // tagging them "text" would be a language lie, and every shell snippet elsewhere in the repo
+    // is already tagged `bash`. Not worth a mixed-motive rule to catch untagged fences that are
+    // untagged on purpose.
     "MD040": false
   },
 

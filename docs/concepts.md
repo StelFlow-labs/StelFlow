@@ -39,16 +39,16 @@ On Stellar, "now" is the [ledger close](glossary.md#ledger-close-time) timestamp
 
 The working set for this page. [glossary.md](glossary.md) has the full list, including the Soroban-specific vocabulary [architecture.md](architecture.md) uses.
 
-| Term                                             | Meaning                                                                      |
-| ------------------------------------------------ | ---------------------------------------------------------------------------- |
-| **[Stream](glossary.md#stream)**                 | One sender → one recipient, one asset, one schedule. The unit of everything. |
-| **[Sender](glossary.md#sender)**                 | Funds the stream at creation. May cancel if the stream is cancelable.        |
-| **[Recipient](glossary.md#recipient)**           | Accrues continuously; calls `withdraw` to settle.                            |
-| **[Streamed](glossary.md#streamed)**             | Amount the formula says has accrued so far.                                  |
-| **[Withdrawn](glossary.md#withdrawn)**           | Amount actually paid out. Always ≤ streamed.                                 |
-| **[Claimable](glossary.md#claimable)**           | `streamed − withdrawn`, minus anything held by a milestone gate.             |
-| **[Unstreamed](glossary.md#unstreamed-balance)** | `total − streamed`. What the sender gets back on cancel.                     |
-| **[Cliff](glossary.md#cliff)**                   | A time before which nothing is claimable, even though accrual has started.   |
+| Term | Meaning |
+|---|---|
+| **[Stream](glossary.md#stream)** | One sender → one recipient, one asset, one schedule. The unit of everything. |
+| **[Sender](glossary.md#sender)** | Funds the stream at creation. May cancel if the stream is cancelable. |
+| **[Recipient](glossary.md#recipient)** | Accrues continuously; calls `withdraw` to settle. |
+| **[Streamed](glossary.md#streamed)** | Amount the formula says has accrued so far. |
+| **[Withdrawn](glossary.md#withdrawn)** | Amount actually paid out. Always ≤ streamed. |
+| **[Claimable](glossary.md#claimable)** | `streamed − withdrawn`, minus anything held by a milestone gate. |
+| **[Unstreamed](glossary.md#unstreamed-balance)** | `total − streamed`. What the sender gets back on cancel. |
+| **[Cliff](glossary.md#cliff)** | A time before which nothing is claimable, even though accrual has started. |
 
 ### Cliffs
 
@@ -58,15 +58,15 @@ This is the standard vesting shape, and it's why "vesting with a cliff" is a str
 
 ## Milestone gates
 
-Time is a bad proxy for progress. A grant paid purely on a clock pays out whether or not the work happened. A grant paid purely on approval leaves the recipient unfunded while they do the work. StelFlow's answer is to keep the clock running and gate the _release_.
+Time is a bad proxy for progress. A grant paid purely on a clock pays out whether or not the work happened. A grant paid purely on approval leaves the recipient unfunded while they do the work. StelFlow's answer is to keep the clock running and gate the *release*.
 
 A **[milestone](glossary.md#milestone)** attaches to a portion of the stream. Each milestone has an amount, an [approver](glossary.md#approver), and a state. Funds inside an unmet milestone's portion accrue normally but are not claimable. When the approver marks the milestone met, that portion unlocks and joins the recipient's claimable balance — including everything that accrued while it was locked.
 
 Concretely, a 100,000 USDC / 12-month grant might be:
 
-| Portion                      | Amount | Gate               |
-| ---------------------------- | ------ | ------------------ |
-| Base                         | 40,000 | Time only          |
+| Portion | Amount | Gate |
+|---|---|---|
+| Base | 40,000 | Time only |
 | Milestone 1 — spec published | 20,000 | Approver marks met |
 | Milestone 2 — testnet deploy | 20,000 | Approver marks met |
 | Milestone 3 — audit complete | 20,000 | Approver marks met |
@@ -89,11 +89,11 @@ The grant above shows the shape. This one shows the numbers, small enough to che
 
 Alice streams 3,000 USDC to Bob over 30 days. Part of it is gated on a milestone.
 
-|                            | Amount         | Gate               |
-| -------------------------- | -------------- | ------------------ |
-| Base                       | 1,800 USDC     | Time only          |
-| Milestone — design handoff | 1,200 USDC     | Approver marks met |
-| **Deposit**                | **3,000 USDC** |                    |
+| | Amount | Gate |
+|---|---|---|
+| Base | 1,800 USDC | Time only |
+| Milestone — design handoff | 1,200 USDC | Approver marks met |
+| **Deposit** | **3,000 USDC** | |
 
 USDC has 7 decimals, so every figure below is in [stroops](glossary.md#stroop). 1 USDC is 10,000,000 stroops, and the 3,000 USDC deposit is **30,000,000,000 stroops**. The contract never sees "3,000 USDC" — it only ever moves stroops.
 
@@ -167,29 +167,29 @@ Of that, 7,200,000,000 stroops are the base portion's last 12 days and 4,800,000
 
 All figures in stroops.
 
-| Moment                  | `elapsed` (s) |       Streamed |      Withdrawn |  Held by gate |      Claimable |
-| ----------------------- | ------------: | -------------: | -------------: | ------------: | -------------: |
-| Day 0, after create     |             0 |              0 |              0 |             0 |              0 |
-| Day 10, before withdraw |       864,000 | 10,000,000,000 |              0 | 4,000,000,000 |  6,000,000,000 |
-| Day 10, after withdraw  |       864,000 | 10,000,000,000 |  6,000,000,000 | 4,000,000,000 |              0 |
-| Day 18, before approval |     1,555,200 | 18,000,000,000 |  6,000,000,000 | 7,200,000,000 |  4,800,000,000 |
-| Day 18, after approval  |     1,555,200 | 18,000,000,000 |  6,000,000,000 |             0 | 12,000,000,000 |
-| Day 18, after withdraw  |     1,555,200 | 18,000,000,000 | 18,000,000,000 |             0 |              0 |
-| Day 30, before withdraw |     2,592,000 | 30,000,000,000 | 18,000,000,000 |             0 | 12,000,000,000 |
-| Day 30, after withdraw  |     2,592,000 | 30,000,000,000 | 30,000,000,000 |             0 |              0 |
+| Moment | `elapsed` (s) | Streamed | Withdrawn | Held by gate | Claimable |
+|---|---:|---:|---:|---:|---:|
+| Day 0, after create | 0 | 0 | 0 | 0 | 0 |
+| Day 10, before withdraw | 864,000 | 10,000,000,000 | 0 | 4,000,000,000 | 6,000,000,000 |
+| Day 10, after withdraw | 864,000 | 10,000,000,000 | 6,000,000,000 | 4,000,000,000 | 0 |
+| Day 18, before approval | 1,555,200 | 18,000,000,000 | 6,000,000,000 | 7,200,000,000 | 4,800,000,000 |
+| Day 18, after approval | 1,555,200 | 18,000,000,000 | 6,000,000,000 | 0 | 12,000,000,000 |
+| Day 18, after withdraw | 1,555,200 | 18,000,000,000 | 18,000,000,000 | 0 | 0 |
+| Day 30, before withdraw | 2,592,000 | 30,000,000,000 | 18,000,000,000 | 0 | 12,000,000,000 |
+| Day 30, after withdraw | 2,592,000 | 30,000,000,000 | 30,000,000,000 | 0 | 0 |
 
 Every row satisfies `claimable = streamed − withdrawn − held`.
 
 ### Reconciliation
 
-| Event                 |            Stroops |      USDC |
-| --------------------- | -----------------: | --------: |
-| Day 10 withdrawal     |      6,000,000,000 |       600 |
-| Day 18 withdrawal     |     12,000,000,000 |     1,200 |
-| Day 30 withdrawal     |     12,000,000,000 |     1,200 |
+| Event | Stroops | USDC |
+|---|---:|---:|
+| Day 10 withdrawal | 6,000,000,000 | 600 |
+| Day 18 withdrawal | 12,000,000,000 | 1,200 |
+| Day 30 withdrawal | 12,000,000,000 | 1,200 |
 | **Total paid to Bob** | **30,000,000,000** | **3,000** |
-| Alice's deposit       |     30,000,000,000 |     3,000 |
-| **Difference**        |              **0** |     **0** |
+| Alice's deposit | 30,000,000,000 | 3,000 |
+| **Difference** | **0** | **0** |
 
 Everything Alice deposited reached Bob. Nothing is stranded in the contract, and no stroop is unaccounted for.
 
@@ -208,17 +208,17 @@ On cancel:
 
 Point 4 is a deliberate choice: an unmet milestone is work that didn't happen, so its funds go back. Point 2 is the other half of the deal — cancellation is not a clawback of earned money. ["Clawback" in StelFlow](glossary.md#clawback-stelflow-sense) means only the unstreamed remainder.
 
-> Note: this is distinct from [the Stellar Asset Contract's `clawback`](glossary.md#clawback-issuer-sense), which is an _issuer_ power to burn an asset from any holder. If the asset you stream has issuer clawback enabled, the issuer can pull funds out from under a live stream, and StelFlow cannot prevent that. Check the asset's flags before you rely on a stream.
+> Note: this is distinct from [the Stellar Asset Contract's `clawback`](glossary.md#clawback-issuer-sense), which is an *issuer* power to burn an asset from any holder. If the asset you stream has issuer clawback enabled, the issuer can pull funds out from under a live stream, and StelFlow cannot prevent that. Check the asset's flags before you rely on a stream.
 
 ## How this differs from what already exists
 
-|                                        | Periodic payments | Lump escrow | Pure streaming (Sablier-style) | StelFlow |
-| -------------------------------------- | ----------------- | ----------- | ------------------------------ | -------- |
-| Recipient paid continuously            | ✗                 | ✗           | ✓                              | ✓        |
-| Needs a live signer                    | ✓                 | ✗           | ✗                              | ✗        |
-| Conditional on work                    | ✗                 | ✓           | ✗                              | ✓        |
-| Sender can recover unearned funds      | ✓                 | ✓           | ✓                              | ✓        |
-| Recipient funded while conditions pend | ✓                 | ✗           | ✓                              | ✓        |
+| | Periodic payments | Lump escrow | Pure streaming (Sablier-style) | StelFlow |
+|---|---|---|---|---|
+| Recipient paid continuously | ✗ | ✗ | ✓ | ✓ |
+| Needs a live signer | ✓ | ✗ | ✗ | ✗ |
+| Conditional on work | ✗ | ✓ | ✗ | ✓ |
+| Sender can recover unearned funds | ✓ | ✓ | ✓ | ✓ |
+| Recipient funded while conditions pend | ✓ | ✗ | ✓ | ✓ |
 
 The last row is the one StelFlow is built for.
 

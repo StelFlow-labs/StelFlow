@@ -17,7 +17,7 @@ Soroban has three storage types; StelFlow already chose [`persistent`](../glossa
 
 The formal protocol definition is [CAP-0046-12, "Soroban State Archival Interface"](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0046-12.md) (Status: Final).
 
-One nuance worth carrying into the design: **[instance storage](../glossary.md#instance-storage) shares one TTL across the whole contract**, while persistent entries each carry their own. That asymmetry matters for the recommendation below — instance archiving blocks _every_ stream at once, while one stream's persistent entry archiving blocks only that stream. They should not get the same level of care.
+One nuance worth carrying into the design: **[instance storage](../glossary.md#instance-storage) shares one TTL across the whole contract**, while persistent entries each carry their own. That asymmetry matters for the recommendation below — instance archiving blocks *every* stream at once, while one stream's persistent entry archiving blocks only that stream. They should not get the same level of care.
 
 ### TTL mechanics
 
@@ -36,15 +36,15 @@ This is exactly what makes architecture.md's permissionless `bump_stream` a soun
 
 Two network floors/ceilings bound every extension, and they are the load-bearing numbers for this whole document:
 
-| Parameter                           | Testnet value (2026-08-11) | @ 5s/ledger¹             |
-| ----------------------------------- | -------------------------- | ------------------------ |
-| `state_archival.min_persistent_ttl` | 120,960 ledgers            | **7 days**               |
-| `state_archival.max_entry_ttl`      | 3,110,400 ledgers          | **180 days (~6 months)** |
-| `state_archival.min_temporary_ttl`  | 720 ledgers                | 1 hour                   |
+| Parameter | Testnet value (2026-08-11) | @ 5s/ledger¹ |
+|---|---|---|
+| `state_archival.min_persistent_ttl` | 120,960 ledgers | **7 days** |
+| `state_archival.max_entry_ttl` | 3,110,400 ledgers | **180 days (~6 months)** |
+| `state_archival.min_temporary_ttl` | 720 ledgers | 1 hour |
 
 ¹ `scp_timing.ledger_target_close_time_milliseconds = 5000` on testnet today — itself a network parameter, not a physical constant. All "real time" figures in this document are `ledgers × 5s`, labeled as approximations for that reason.
 
-**The consequence that drives the rest of this document:** no single `extend_ttl` call — no matter how aggressively it's called, no matter who pays — can push a stream's TTL out further than ~180 days from _now_. A 4-year (≈1,460-day) stream cannot be extended once at creation and then ignored. It needs to be touched, by someone, roughly every six months for its entire life, or it archives. "Extend aggressively at creation" reduces how _often_ that's needed; it cannot eliminate the need.
+**The consequence that drives the rest of this document:** no single `extend_ttl` call — no matter how aggressively it's called, no matter who pays — can push a stream's TTL out further than ~180 days from *now*. A 4-year (≈1,460-day) stream cannot be extended once at creation and then ignored. It needs to be touched, by someone, roughly every six months for its entire life, or it archives. "Extend aggressively at creation" reduces how *often* that's needed; it cannot eliminate the need.
 
 ### Restoration
 
@@ -55,7 +55,7 @@ Two network floors/ceilings bound every extension, and they are the load-bearing
 
 Formal reference: [CAP-0066, "Soroban In-memory Read Resource"](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0066.md) (Status: Final, Protocol version: 23). Testnet is already at protocol 27, so this behavior is live on the network StelFlow will develop against.
 
-This matters more than it looks. Architecture.md's model — "the SDK must detect an archived entry and produce a restore-then-withdraw flow" — was written before accounting for the fact that, as of Protocol 23, a correctly-written client doesn't need to _detect_ anything explicitly: `simulateTransaction` itself reports the restoration requirement (as a `restorePreamble`, in the JS SDK's terms) alongside the normal simulation result, and the SDK's job is to act on that field, not to catch a failure and reverse-engineer what went wrong. Concrete flow in [§ Restore-then-withdraw](#restore-then-withdraw-concrete-guidance-for-the-sdk).
+This matters more than it looks. Architecture.md's model — "the SDK must detect an archived entry and produce a restore-then-withdraw flow" — was written before accounting for the fact that, as of Protocol 23, a correctly-written client doesn't need to *detect* anything explicitly: `simulateTransaction` itself reports the restoration requirement (as a `restorePreamble`, in the JS SDK's terms) alongside the normal simulation result, and the SDK's job is to act on that field, not to catch a failure and reverse-engineer what went wrong. Concrete flow in [§ Restore-then-withdraw](#restore-then-withdraw-concrete-guidance-for-the-sdk).
 
 The other detail worth flagging: a restored persistent entry doesn't come back with a generous TTL. It comes back at the network's `min_persistent_ttl` floor — currently 7 days (see table above) — so a stream that gets restored but isn't immediately touched by a state-changing call (which re-extends it) can archive again within a week.
 
@@ -76,7 +76,7 @@ Every Soroban smart-contract transaction pays a **resource fee** on top of the c
 
 Rent is not flat. It scales on two axes that matter directly for StelFlow's data layout:
 
-1. **Entry size.** A bigger stored struct costs more to keep alive per ledger. This is the same pressure architecture.md's read-budget section already used to justify keeping milestones inline in the stream struct rather than as separate entries — and it cuts the other way here too: inlining milestones makes the _rent_ per stream scale with milestone count, which is one more argument (alongside the read-budget one) for the still-open `MAX_MILESTONES_PER_STREAM` cap.
+1. **Entry size.** A bigger stored struct costs more to keep alive per ledger. This is the same pressure architecture.md's read-budget section already used to justify keeping milestones inline in the stream struct rather than as separate entries — and it cuts the other way here too: inlining milestones makes the *rent* per stream scale with milestone count, which is one more argument (alongside the read-budget one) for the still-open `MAX_MILESTONES_PER_STREAM` cap.
 2. **Extension length**, in ledgers requested — bounded above by `max_entry_ttl` per call, as established above.
 
 Both are then multiplied by a rate that isn't fixed either — it moves with total network storage demand:
@@ -88,7 +88,7 @@ Testnet's current settings encode that curve as `rent_fee1_kb_soroban_state_size
 
 What is safe to say without re-deriving the curve: the base, non-rent cost of touching one entry is small and roughly fixed — testnet's `fee_write_ledger_entry` (2,500 stroops), `fee_disk_read_ledger_entry` (1,563 stroops), and their per-KB counterparts are on the order of a few thousand stroops (≈0.0001–0.001 XLM) per entry, before rent. Rent is the variable, potentially-large component, and it's the one that scales with both stream size and how far out the extension reaches.
 
-**Restoring costs the same shape of fee as extending**, plus it's a full write of the entry (not just a TTL bump), so it's at least as expensive as an equivalent extension and is priced through the same congestion-sensitive curve. It is not free, but it is a _single_ payment made once, at the moment someone wants to use the stream again — which is the crux of the recommendation below.
+**Restoring costs the same shape of fee as extending**, plus it's a full write of the entry (not just a TTL bump), so it's at least as expensive as an equivalent extension and is priced through the same congestion-sensitive curve. It is not free, but it is a *single* payment made once, at the moment someone wants to use the stream again — which is the crux of the recommendation below.
 
 ## Options compared
 
@@ -106,7 +106,7 @@ What is safe to say without re-deriving the curve: the base, non-rent cost of to
 
 **Cost:** one extra write-bytes charge folded into the creation transaction the sender is already paying for (plus rent for the longer window, which is real money but a single line item, not a recurring bill). Same at each subsequent touch.
 
-**Failure mode:** still bounded by `max_entry_ttl` from whenever the _last_ touch happened — it cannot survive a 4-year gap in one shot. It converts "will definitely archive well before the cliff" into "will archive unless something touches it roughly every six months," which is a real improvement but not a solution on its own.
+**Failure mode:** still bounded by `max_entry_ttl` from whenever the *last* touch happened — it cannot survive a 4-year gap in one shot. It converts "will definitely archive well before the cliff" into "will archive unless something touches it roughly every six months," which is a real improvement but not a solution on its own.
 
 ### C. Keeper / watcher service
 
@@ -131,7 +131,7 @@ What is safe to say without re-deriving the curve: the base, non-rent cost of to
 
 **Combine B, a narrowed C, and D — deliberately not the full version of any single option:**
 
-1. **Instance/shared storage** (contract-wide config) gets the most conservative treatment available: extend it unconditionally, generously, on every call that touches it, with no cost-benefit hesitation. It's one entry, cheap to keep alive, and losing it blocks _every_ stream simultaneously — the asymmetry noted in [§ Storage types](#storage-types-briefly). This isn't new; it's confirming architecture.md's existing split between instance and persistent storage is the right place to draw this line and should stay that way.
+1. **Instance/shared storage** (contract-wide config) gets the most conservative treatment available: extend it unconditionally, generously, on every call that touches it, with no cost-benefit hesitation. It's one entry, cheap to keep alive, and losing it blocks *every* stream simultaneously — the asymmetry noted in [§ Storage types](#storage-types-briefly). This isn't new; it's confirming architecture.md's existing split between instance and persistent storage is the right place to draw this line and should stay that way.
 2. **Per-stream persistent entries** keep architecture.md's extend-on-touch behavior (Option A) as the free default for active streams, unchanged.
 3. **At creation**, size the initial extension to the stream's own cliff/duration rather than a flat default (Option B) — the information is free (already an argument to `create_stream`), and it directly reduces, for the specific case the issue names, how many unattended six-month windows a long stream has to survive.
 4. **Keep `bump_stream` permissionless** so nothing stops a sender, a grantor, or a third party from running their own keeper — but **StelFlow does not build or operate one in v1** (Option C, deliberately not adopted as a project commitment). It's real, ongoing infrastructure with its own single-point-of-failure risk, it's out of scope per the issue, and nothing about the recommendation below depends on it existing.
@@ -156,22 +156,22 @@ This is the flow the acceptance criteria call out as where users actually hit th
 
 Every ledger-count or fee figure in this document is a live network setting, checked once, on the date below. All of them can change at a protocol upgrade — the [4,095-vs-120,960 discrepancy](#a-live-example-of-why-every-number-here-needs-re-checking) above is proof one already has. None of them belong in the contract as a compiled-in constant.
 
-| Parameter                                                                                                               | Testnet value                                                                   | Checked    | Source                                                                                                                                                                                                     |
-| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `state_archival.min_persistent_ttl`                                                                                     | 120,960 ledgers (~7 days)                                                       | 2026-08-11 | `stellar network settings --network testnet`; [CAP-0046-12](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0046-12.md)                                                                   |
-| `state_archival.max_entry_ttl`                                                                                          | 3,110,400 ledgers (~180 days)                                                   | 2026-08-11 | same                                                                                                                                                                                                       |
-| `state_archival.min_temporary_ttl`                                                                                      | 720 ledgers (~1 hour)                                                           | 2026-08-11 | same                                                                                                                                                                                                       |
-| `persistent_rent_rate_denominator` / `temp_rent_rate_denominator`                                                       | 1,215 / 2,430                                                                   | 2026-08-11 | same                                                                                                                                                                                                       |
-| `rent_fee1_kb_soroban_state_size_{low,high}`, `soroban_state_rent_fee_growth_factor`, `soroban_state_target_size_bytes` | -17,000 / 10,000 / 5,000 / 4,000,000,000 bytes                                  | 2026-08-11 | same; formula implementation is the canonical fee library the [Fees & Metering docs](https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering) point to, not restated in prose |
-| `fee_write_ledger_entry` / `fee_disk_read_ledger_entry`                                                                 | 2,500 / 1,563 stroops                                                           | 2026-08-11 | same                                                                                                                                                                                                       |
-| `fee_write1_kb` / `fee_disk_read1_kb`                                                                                   | 875 / 447 stroops                                                               | 2026-08-11 | same                                                                                                                                                                                                       |
-| `tx_max_disk_read_entries` / `tx_max_write_ledger_entries`                                                              | 200 / 200                                                                       | 2026-08-11 | same — matches architecture.md's SLP-0004 claim, corroborated live                                                                                                                                         |
-| `scp_timing.ledger_target_close_time_milliseconds`                                                                      | 5,000 ms                                                                        | 2026-08-11 | same — the 5s/ledger conversion used throughout this document is itself this parameter, not a constant                                                                                                     |
-| Network protocol version                                                                                                | Testnet: 27. Installed stellar-cli (23.4.1) fully understands protocol 23 only. | 2026-08-11 | `stellar --version`; CLI warning on `network settings` output                                                                                                                                              |
+| Parameter | Testnet value | Checked | Source |
+|---|---|---|---|
+| `state_archival.min_persistent_ttl` | 120,960 ledgers (~7 days) | 2026-08-11 | `stellar network settings --network testnet`; [CAP-0046-12](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0046-12.md) |
+| `state_archival.max_entry_ttl` | 3,110,400 ledgers (~180 days) | 2026-08-11 | same |
+| `state_archival.min_temporary_ttl` | 720 ledgers (~1 hour) | 2026-08-11 | same |
+| `persistent_rent_rate_denominator` / `temp_rent_rate_denominator` | 1,215 / 2,430 | 2026-08-11 | same |
+| `rent_fee1_kb_soroban_state_size_{low,high}`, `soroban_state_rent_fee_growth_factor`, `soroban_state_target_size_bytes` | -17,000 / 10,000 / 5,000 / 4,000,000,000 bytes | 2026-08-11 | same; formula implementation is the canonical fee library the [Fees & Metering docs](https://developers.stellar.org/docs/learn/fundamentals/fees-resource-limits-metering) point to, not restated in prose |
+| `fee_write_ledger_entry` / `fee_disk_read_ledger_entry` | 2,500 / 1,563 stroops | 2026-08-11 | same |
+| `fee_write1_kb` / `fee_disk_read1_kb` | 875 / 447 stroops | 2026-08-11 | same |
+| `tx_max_disk_read_entries` / `tx_max_write_ledger_entries` | 200 / 200 | 2026-08-11 | same — matches architecture.md's SLP-0004 claim, corroborated live |
+| `scp_timing.ledger_target_close_time_milliseconds` | 5,000 ms | 2026-08-11 | same — the 5s/ledger conversion used throughout this document is itself this parameter, not a constant |
+| Network protocol version | Testnet: 27. Installed stellar-cli (23.4.1) fully understands protocol 23 only. | 2026-08-11 | `stellar --version`; CLI warning on `network settings` output |
 
 **How the contract and SDK should actually use these**, rather than compiling any of the above in:
 
-- **The contract** should not embed a specific `extend_to`/`threshold` ledger count as a `const`. Store the tunable thresholds in `instance` storage as part of contract config (mutable by whatever admin/governance process architecture.md's [open question on upgradeability](../architecture.md#open-questions) eventually settles), so a protocol upgrade that moves `max_entry_ttl` doesn't require redeploying the contract to stay sensible. Soroban exposes `max_ttl()` as a host function specifically so a contract can ask the _current_ ceiling instead of assuming one — use it rather than a stored guess.
+- **The contract** should not embed a specific `extend_to`/`threshold` ledger count as a `const`. Store the tunable thresholds in `instance` storage as part of contract config (mutable by whatever admin/governance process architecture.md's [open question on upgradeability](../architecture.md#open-questions) eventually settles), so a protocol upgrade that moves `max_entry_ttl` doesn't require redeploying the contract to stay sensible. Soroban exposes `max_ttl()` as a host function specifically so a contract can ask the *current* ceiling instead of assuming one — use it rather than a stored guess.
 - **The SDK** should never ship a hardcoded fee estimate for restoration or extension. The only correct source for "what will this cost right now" is `simulateTransaction` against the live network at call time — that's what step 3 of the [restore-then-withdraw flow](#restore-then-withdraw-concrete-guidance-for-the-sdk) above depends on. If the dashboard wants a rough number to show before a user commits to an action (e.g. "streams like this typically need re-extension every ~6 months"), it should be computed from a fresh `stellar network settings` / RPC config call, cached with a short TTL of its own, and labeled as an estimate.
 
 ## Resolving the architecture.md TODO

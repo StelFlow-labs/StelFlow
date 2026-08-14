@@ -11,9 +11,6 @@ importers:
       markdownlint-cli2:
         specifier: 0.23.2
         version: 0.23.2
-      prettier:
-        specifier: 3.9.6
-        version: 3.9.6
 
 packages:
 
@@ -278,11 +275,6 @@ packages:
   picomatch@2.3.2:
     resolution: {integrity: sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==}
     engines: {node: '>=8.6'}
-
-  prettier@3.9.6:
-    resolution: {integrity: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==}
-    engines: {node: '>=14'}
-    hasBin: true
 
   punycode.js@2.3.1:
     resolution: {integrity: sha512-uxFIHU0YlHYhDQtV4R9J6a52SLx28BCjT+4ieh7IGbgwVJWO+km431c4yRlREUAsAmt/uMjQUyQHNEPf0M39CA==}
@@ -688,8 +680,6 @@ snapshots:
       is-hexadecimal: 2.0.1
 
   picomatch@2.3.2: {}
-
-  prettier@3.9.6: {}
 
   punycode.js@2.3.1: {}
 

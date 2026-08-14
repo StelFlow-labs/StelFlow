@@ -5,13 +5,11 @@
 # Verify markdown anchors resolve, not just that the target file exists. This is the setting that
 # makes the internal job worth having — StelFlow's docs cross-reference each other by heading
 # anchor (e.g. docs/architecture.md#open-questions), and a heading rename silently breaks those
-# without this on.
+# without this on. Headings with em dashes or emoji (this repo has both — see ROADMAP.md's phase
+# headings) produce non-obvious GitHub-style anchors; this is deliberately verified against a
+# broken anchor pushed to this PR for the maintainer to watch fail, then removed — see the PR
+# description for the run.
 include_fragments = true
-
-# Headings with em dashes or emoji (this repo has both — see ROADMAP.md's phase headings) produce
-# non-obvious GitHub-style anchors. Don't second-guess lychee's anchor algorithm here; it's
-# verified against a deliberately broken anchor as part of this PR, see the PR description.
-remap = []
 
 # Mailto links (SECURITY.md, CODE_OF_CONDUCT.md) aren't checkable without an SMTP probe and
 # shouldn't be treated as broken links.
@@ -23,8 +21,8 @@ retry_wait_time = 5
 max_retries = 2
 
 # GitHub's own API/UI is the most-linked external host in this repo (issue links, security
-# advisories) and is also the most likely to 429 an unauthenticated CI runner. Excluding it from
-# the *scheduled* run's failure signal isn't needed since that job never fails the build (see
-# docs.yml) — this accept list intentionally stays empty so nothing is silently skipped and every
-# external link's status is visible in the scheduled run's report.
+# advisories) and is also the most likely to 429 an unauthenticated CI runner. Treating 429 as
+# "alive" trades a small amount of blindness to an actually-dead github.com link for not crying
+# wolf most weeks — the scheduled job already never fails the build (see docs.yml), so this only
+# affects whether a given link's line in the report reads "OK" or "rate limited"/red.
 accept = [200, 429]

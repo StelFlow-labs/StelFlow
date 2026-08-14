@@ -4,7 +4,7 @@ Definitions for the vocabulary used across this repository — StelFlow's own te
 
 Everything here describes the intended design. None of it is implemented.
 
-> **The one to read first: [clawback](#clawback-issuer-sense) means two unrelated things in this project.** One is a sender recovering funds nobody has earned yet. The other is an asset issuer burning funds a recipient _has_ earned. StelFlow guarantees the first cannot touch earned money; it cannot defend against the second at all. Both entries are below and each points at the other.
+> **The one to read first: [clawback](#clawback-issuer-sense) means two unrelated things in this project.** One is a sender recovering funds nobody has earned yet. The other is an asset issuer burning funds a recipient *has* earned. StelFlow guarantees the first cannot touch earned money; it cannot defend against the second at all. Both entries are below and each points at the other.
 
 Longer explanations live in [concepts.md](concepts.md) for the model and [architecture.md](architecture.md) for the Soroban mechanics. This page is the lookup, not the tutorial.
 
@@ -32,7 +32,7 @@ What the recipient can withdraw at this moment: `streamed − withdrawn − held
 
 ### Clawback (issuer sense)
 
-An asset _issuer_ burning tokens out of any holder's balance — including a balance StelFlow is holding for a live stream, and including funds the recipient has already earned. On Stellar this is the [Stellar Asset Contract](#stellar-asset-contract-sac)'s admin `clawback` function, which succeeds only when the holder's trustline has the [`TRUSTLINE_CLAWBACK_ENABLED_FLAG`](https://developers.stellar.org/docs/tokens/control-asset-access#clawback-enabled-0x8) set; [SEP-41](#sep-41) standardizes the `clawback` _event_ but deliberately defines no such function. StelFlow cannot prevent this and does not claim to — check an asset's flags before relying on a stream denominated in it.
+An asset *issuer* burning tokens out of any holder's balance — including a balance StelFlow is holding for a live stream, and including funds the recipient has already earned. On Stellar this is the [Stellar Asset Contract](#stellar-asset-contract-sac)'s admin `clawback` function, which succeeds only when the holder's trustline has the [`TRUSTLINE_CLAWBACK_ENABLED_FLAG`](https://developers.stellar.org/docs/tokens/control-asset-access#clawback-enabled-0x8) set; [SEP-41](#sep-41) standardizes the `clawback` *event* but deliberately defines no such function. StelFlow cannot prevent this and does not claim to — check an asset's flags before relying on a stream denominated in it.
 
 **Contrast with [clawback (StelFlow sense)](#clawback-stelflow-sense)** — unrelated powers, held by different parties, over different money; confusing them means misjudging what the protocol guarantees.
 
@@ -40,7 +40,7 @@ An asset _issuer_ burning tokens out of any holder's balance — including a bal
 
 A sender recovering the [unstreamed balance](#unstreamed-balance) of a stream on [cancellation](#cancellation). It reaches only funds that have not accrued yet; already-streamed funds stay the recipient's, and the clock decides that split rather than either party. Cancellation is therefore not a clawback of earned money.
 
-**Contrast with [clawback (issuer sense)](#clawback-issuer-sense)** — that one _can_ reach earned funds, and StelFlow cannot stop it.
+**Contrast with [clawback (issuer sense)](#clawback-issuer-sense)** — that one *can* reach earned funds, and StelFlow cannot stop it.
 
 ### Cliff
 
@@ -74,7 +74,7 @@ The planned off-chain service that ingests StelFlow's contract events and answer
 
 ### Instance storage
 
-One of Soroban's three storage types. A contract's instance entry is archived together with its Wasm and is loaded on _every_ call, so StelFlow uses it only for small contract-wide config — never per-stream state, which would make every call pay to load every stream.
+One of Soroban's three storage types. A contract's instance entry is archived together with its Wasm and is loaded on *every* call, so StelFlow uses it only for small contract-wide config — never per-stream state, which would make every call pay to load every stream.
 
 Reference: [State archival → Instance](https://developers.stellar.org/docs/learn/fundamentals/contract-development/storage/state-archival#instance)
 
@@ -144,7 +144,7 @@ Reference: [Stellar Asset Contract](https://developers.stellar.org/docs/tokens/s
 
 ### Stream
 
-One sender → one recipient, one asset, one schedule. The unit of everything in StelFlow. The stream _is_ the formula, not the payments: withdrawals are settlement events against it and change nothing about it.
+One sender → one recipient, one asset, one schedule. The unit of everything in StelFlow. The stream *is* the formula, not the payments: withdrawals are settlement events against it and change nothing about it.
 
 ### Streamed
 
@@ -168,7 +168,7 @@ A portion of a stream's total with its own gate: the base tranche runs on time a
 
 ### Trustless Work
 
-[Escrow](#escrow)-as-a-service on Soroban, with milestones, approvals, and disputes already built. The intended integration names a Trustless Work escrow as a milestone's [approver](#approver): the escrow decides _whether_ a condition is met, and StelFlow decides _how fast_ money moves once it is.
+[Escrow](#escrow)-as-a-service on Soroban, with milestones, approvals, and disputes already built. The intended integration names a Trustless Work escrow as a milestone's [approver](#approver): the escrow decides *whether* a condition is met, and StelFlow decides *how fast* money moves once it is.
 
 Reference: [docs.trustlesswork.com](https://docs.trustlesswork.com/)
 
