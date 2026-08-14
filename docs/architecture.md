@@ -79,6 +79,7 @@ stateDiagram-v2
     Streaming --> Completed: ledger time ≥ end
 
     Completed --> Completed: withdraw()<br/>remaining balance
+    Completed --> Canceled: cancel()<br/>unapproved tranches → sender
     Completed --> Settled: withdrawn == streamed<br/>all milestones resolved
 
     Canceled --> Settled: recipient withdraws<br/>earned balance
@@ -174,7 +175,7 @@ What it costs, and what the contract must not assume:
 - **SEP-41 is still a Draft SEP.** It's stable in practice and the SAC implements it, but the contract should depend only on the functions it actually calls (`transfer`, `transfer_from`, `balance`, `decimals`) rather than the full surface.
 - **[Issuer clawback](glossary.md#clawback-issuer-sense) is out of scope and cannot be defended against.** The power is the [SAC](glossary.md#stellar-asset-contract-sac)'s admin `clawback` rather than anything SEP-41 defines, so it rides on the asset, not on the interface: if the issuer enabled clawback, they can remove funds the contract is holding for a live stream. The contract should not pretend its stored `total` is a guarantee — `balance` is the truth. The dashboard should warn when a stream's asset has clawback enabled. This is a disclosure problem, not a code problem.
 - **Decimals are the asset's, not ours.** All internal math is in the asset's smallest unit. Human-readable formatting happens in the SDK, never in the contract.
-- **Non-standard transfer behavior breaks accrual accounting.** A fee-on-transfer or rebasing token would leave the contract holding less than the stream promises. <!-- TODO(maintainer): decide whether create_stream verifies received balance against the requested total, or whether unsupported assets are simply documented as unsupported. -->
+- **Non-standard transfer behavior breaks accrual accounting.** A fee-on-transfer or rebasing token would leave the contract holding less than the stream promises. **Decided: `create_stream` measures rather than trusts.** It reads the contract's own balance either side of the `transfer_from` and stores the observed delta as `total`, so the stored figure is true by construction for any asset and value conservation holds without depending on the token behaving. The cost is one extra balance read at creation. This fixes fee-on-transfer completely. It does not fix *rebasing*, because no creation-time measurement can bind a balance that moves afterwards — rebasing assets are unsupported, and the rule that `balance` is the truth rather than the stored `total` is what limits the damage. See [threat-model T4](research/threat-model.md#t4--non-standard-tokens-produce-under-funded-streams).
 
 ### Authorization
 

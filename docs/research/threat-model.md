@@ -37,7 +37,7 @@ different and more tractable problem.
 | [T1](#t1--upgrade-authority-is-the-largest-trust-concentration-in-the-system) | Upgrade authority replaces the accrual logic | Critical | Decision-dependent | **P0** | Open decision |
 | [T2](#t2--resource-exhaustion-as-denial-of-withdrawal) | Resource exhaustion makes a stream unwithdrawable | Critical | Medium | **P0** | Mitigated by design, caps unset |
 | [T3](#t3--an-approver-who-never-comes-back) | Approver disappears; tranche locked forever | High | Medium | **P1** | Unmitigated |
-| [T4](#t4--non-standard-tokens-produce-under-funded-streams) | Fee-on-transfer token under-funds a stream | High | Low–Medium | **P1** | Undecided |
+| [T4](#t4--non-standard-tokens-produce-under-funded-streams) | Fee-on-transfer token under-funds a stream | High | Low–Medium | **P1** | **Mitigated** |
 | [T5](#t5--an-emergency-stop-that-can-freeze-withdrawals) | Pause blocks withdrawal of earned funds | High | Decision-dependent | **P1** | Open decision |
 | [T6](#t6--the-sender-controls-the-approver) | Sender names themselves approver, never approves, cancels | Medium | Medium | **P2** | Accepted + disclosure |
 | [T7](#t7--issuer-clawback) | Issuer claws back funds from a live stream | Critical | Low, asset-dependent | **P2** | Accepted, out of scope |
@@ -156,15 +156,19 @@ recipient's final settlement — finds the balance short. That is a **value-cons
 
 **Cost:** free to the issuer; invisible to the sender at creation.
 
-**Mitigation.** This is architecture.md's open TODO and
-[behaviour.md's `UNDECIDED` #4](../specs/behaviour.md#undecided-cases). The threat model's answer:
+**Mitigation.** This was architecture.md's open TODO and
+[behaviour.md's case 4](../specs/behaviour.md#resolved-cases). The threat model's answer:
 **measure, don't trust.** `create_stream` should read the contract's own balance before and after the
 transfer and store the delta as `total`. It costs one extra balance read at creation, it makes the
 stored figure true by construction for every asset, and it converts an unbounded class of
 asset-specific bugs into a non-issue. Documenting such assets as "unsupported" is the weaker option:
 nothing enforces it, and the failure surfaces months later at the final withdrawal.
 
-**Status:** undecided. Recommend balance-delta accounting.
+**Status:** **decided — balance-delta accounting**, in
+[issue #32](https://github.com/StelFlow-labs/StelFlow/issues/32). `create_stream` stores the observed
+delta rather than the requested total, so fee-on-transfer no longer produces an under-funded stream.
+Rebasing assets remain unsupported: no creation-time measurement can bind a balance that moves
+afterwards, and the residual there is accepted, bounded by the rule that `balance` is the truth.
 
 ## T5 — An emergency stop that can freeze withdrawals
 
@@ -422,7 +426,7 @@ Collected so they can be argued with individually:
 2. **Hold the rule that `withdraw`'s cost never grows with a stream's history** (T2).
 3. **Decide milestone deadlines or fallback approvers** alongside
    [issue #17](https://github.com/StelFlow-labs/StelFlow/issues/17) (T3).
-4. **`create_stream` should store the measured balance delta, not the requested total** (T4).
+4. ~~**`create_stream` should store the measured balance delta, not the requested total** (T4).~~ **Done** — decided in #32.
 5. **If a pause exists, it must not be able to block `withdraw`** (T5).
 6. **Non-upgradeable, or upgradeable behind multisig plus a timelock** (T1).
 7. **SDK and dashboard must surface approver identity, gated fraction, clawback flag, and estimated

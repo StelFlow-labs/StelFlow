@@ -68,6 +68,19 @@ And the stream stores both tranches, each running on the same start/end/duration
 And deposit (3,000,000) == withdrawn (0) + refunded (0) + remaining_in_contract (3,000,000)
 ```
 
+### Scenario: a fee-on-transfer token — the stream is sized to what actually arrived
+
+```gherkin
+Given a sender and a token that deducts a 1% fee on every transfer
+And the sender calls create_stream(total=1,000,000, start=0, end=10,000)
+When the contract reads its own balance before and after the transfer_from
+Then the observed delta is 990,000, not the 1,000,000 requested
+And the stream stores total = 990,000 — the measured amount, never the requested one
+And the stream-created event carries 990,000, so the sender and the indexer both see what was really escrowed
+And accrual runs on 990,000, so the stream is smaller than asked for but never promises more than it holds
+And deposit (990,000) == withdrawn (0) + refunded (0) + remaining_in_contract (990,000)
+```
+
 ### Scenario: rejected — end does not exceed start
 
 ```gherkin
@@ -260,6 +273,31 @@ And deposit (100) == withdrawn (100) + refunded (0) + remaining_in_contract (0),
 
 ---
 
+### Scenario: withdraw against an archived stream entry — the contract never runs
+
+```gherkin
+Given a long-dormant stream whose persistent entry has passed its TTL and archived
+And a recipient who builds a withdraw() transaction directly, without simulating first
+When the transaction is submitted
+Then it fails at the host level before any contract code executes — the entry is not in the footprint
+And no scenario in this document applies, because withdraw() itself is never entered
+And no funds move and no state changes
+
+Given the same archived stream
+And a recipient whose client simulates the withdraw first
+When simulation reports the restoration requirement (restorePreamble, in the JS SDK's terms)
+And the client submits the transaction with the entry in its restore list
+Then the entry is restored automatically before the host function runs, and withdraw() proceeds normally
+And every ordinary withdraw scenario above applies unchanged from that point
+```
+
+The contract has no archived-entry branch to write, and could not have one — there is nothing for it
+to catch. This is an SDK obligation, not contract behaviour. See
+[ttl-strategy.md](../research/ttl-strategy.md) for the Protocol 23 mechanics and the concrete client
+flow.
+
+---
+
 ## Feature: approve_milestone
 
 ### Scenario: happy path — approval releases accrued-to-date, not just future accrual
@@ -304,14 +342,23 @@ Then the call is rejected — there is nothing left for the approval to release,
 And the milestone's state and the stream's balances are unchanged
 ```
 
-Note on why this one is marked decided while "cancel after end" below is marked `UNDECIDED`: both rest on the same class of evidence — the lifecycle diagram in architecture.md draws no arrow for either transition. What tips this one to a decided answer is the extra, substantive argument above: cancel has already moved the milestone's funds out of the contract and back to the sender, so there is a concrete reason approval must fail rather than just an absence of a diagram arrow. "Cancel after end" has no equivalent argument pointing either way, which is exactly why it stays `UNDECIDED` instead.
+Note on the reasoning here, since both this case and "cancel after end" below started from the same weak evidence — the lifecycle diagram draws no arrow for either transition. An absent arrow turned out to be worth nothing on its own; what settled each case was a substantive argument. Here it is that cancel has already returned the milestone's funds to the sender, so approval must fail rather than manufacture claimable balance the contract no longer holds. For "cancel after end" the argument ran the other way and permitted the call, because rejecting it would strand a never-approved tranche permanently. Same missing arrow, opposite answers — which is the lesson: the diagram was incomplete, not eloquent, and it has since been corrected in both directions.
 
 ### Scenario: double approval of an already-met milestone
 
 ```gherkin
 Given a milestone whose state is already met
 When the approver calls approve_milestone(milestone_id) again
-Then the call is UNDECIDED — see Undecided cases at the end of this document
+Then the call succeeds and does nothing — the same no-op treatment a second withdraw in one ledger gets
+And the milestone's state is still met, held is unchanged, and claimable is unchanged
+And no second milestone-approved event is emitted, so the indexer's fold sees one approval, not two
+And deposit == withdrawn + refunded + remaining_in_contract holds unchanged — no funds move
+```
+
+```gherkin
+Given a milestone whose state is already met
+When an address that is not that milestone's approver calls approve_milestone(milestone_id)
+Then the call is rejected on authorization, not silently absorbed by the no-op
 ```
 
 ---
@@ -360,13 +407,35 @@ And the full 500,000 returns to the sender immediately
 And deposit (500,000) == withdrawn (0) + refunded (500,000) + remaining_in_contract (0)
 ```
 
-### Scenario: cancel after end (the stream has already fully streamed)
+### Scenario: cancel after end, all milestones resolved — a genuine no-op
 
 ```gherkin
-Given a cancelable stream where now >= end, so streamed = total already, but the recipient has not withdrawn everything
+Given a cancelable stream with no milestones (or all of them approved), total=1,000,000, now >= end
+And streamed = 1,000,000 already, withdrawn = 400,000, so 600,000 of frozen claimable is still owed
 When the sender calls cancel()
-Then the outcome is UNDECIDED — see Undecided cases at the end of this document
+Then the call succeeds
+And the unstreamed remainder is 1,000,000 - 1,000,000 = 0, so nothing returns to the sender
+And the recipient's 600,000 stays withdrawable — cancellation never sweeps earned balance
+And deposit (1,000,000) == withdrawn (400,000) + refunded (0) + remaining_in_contract (600,000)
 ```
+
+### Scenario: cancel after end with a milestone still unmet — the sender recovers the whole tranche
+
+```gherkin
+Given the Alice/Bob stream at now >= end, with the milestone never approved
+And streamed_total = 30,000,000,000, held = 12,000,000,000 (the milestone streamed in full but is gated)
+And withdrawn = 18,000,000,000 (the recipient took all base claimable), so claimable = 0
+When the sender calls cancel()
+Then per the unapproved-milestone rule the whole gated tranche is treated as unstreamed
+And 12,000,000,000 returns to the sender — not zero, even though nothing is "unstreamed" by the clock
+And the recipient keeps their 18,000,000,000 and has nothing further claimable
+And deposit (30,000,000,000) == withdrawn (18,000,000,000) + refunded (12,000,000,000) + remaining_in_contract (0)
+```
+
+This second scenario is why `cancel()` after `end` is permitted rather than rejected: it is the only
+in-protocol way to resolve a milestone that was never approved. Rejecting it would strand the tranche
+permanently — see [threat-model T3](../research/threat-model.md#t3--an-approver-who-never-comes-back),
+which this narrows for cancelable streams and leaves untouched for non-cancelable ones.
 
 ### Scenario: cancel with an unmet milestone in flight — the gated tranche returns to the sender, not just its unaccrued fraction
 
@@ -394,37 +463,41 @@ And deposit (30,000,000,000) == withdrawn (18,000,000,000) + refunded (10,000,00
 
 ---
 
-## Undecided cases
+## Resolved cases
 
-These are points where the current design docs ([concepts.md](../concepts.md),
-[architecture.md](../architecture.md), [ROADMAP.md](../../ROADMAP.md)) do not determine the answer.
-Each is `UNDECIDED` above; listed together here per the issue's request, so they're easy to find and
-argue about without hunting through the scenarios.
+This section used to list five points where writing the specs found that the design didn't determine
+an answer. All five are now decided, and each has real scenarios above rather than an `UNDECIDED`
+marker. Kept as a record of what was open and where it was settled, because the reasoning is more
+useful than the conclusion alone.
 
-1. **Double approval of an already-met milestone.** Does `approve_milestone` reject a second call the
-   way a second `withdraw` in the same ledger is a no-op, or does it error? Nothing in
-   architecture.md's authorization section or concepts.md's milestone-gates section says. This is
-   distinct from milestone _revocation_ (below) — it's calling approve again, not un-approving.
-2. **Cancel called after the stream has already reached `end`.** The lifecycle diagram in
-   architecture.md shows `cancel()` as a transition out of `Pending` or `Streaming`, with no arrow from
-   `Completed`. That suggests cancel might simply be disallowed once `now >= end`, but nothing states
-   this explicitly, and functionally a no-op cancel (refund = 0, since nothing is unstreamed) would be
-   harmless if allowed. Whether the call reverts or succeeds-as-a-no-op is unspecified.
-3. ~~**Milestone revocation.**~~ **Settled — no revocation.** Milestone state is monotonic and `Met`
-   is terminal, decided in [research/milestone-revocation.md](../research/milestone-revocation.md).
-   There is no revocation entry point to write a scenario against, and now there never will be, so
-   this stops being an open case. Two consequences worth holding while writing the rest of these
-   scenarios: `claimable` is non-decreasing in approvals and cannot be driven negative by a milestone
-   action, and case 1 above is narrowed — with no state change available, a second `approve_milestone`
-   is only a question of which failure signal is friendlier.
-4. **`create_stream` and non-standard transfer behaviour.** architecture.md flags with a TODO whether
-   `create_stream` verifies the balance actually received against the requested `total` (to catch
-   fee-on-transfer or rebasing tokens) or whether such assets are simply documented as unsupported. This
-   changes whether a `create_stream` scenario against such a token would fail the call or silently create
-   an under-funded stream — no scenario above covers it because the entry point's behaviour isn't decided.
-5. **Withdrawing from an archived (TTL-lapsed) stream entry.** architecture.md says the SDK must detect
-   archival and drive a restore-then-withdraw flow, but doesn't state what `withdraw` itself does if
-   called directly against an archived entry — whether the contract call fails cleanly (entry not in the
-   transaction's footprint) or whether restoration can be bundled into the same call. This is a
-   real-machine SDK/contract-boundary question, not purely a contract-semantics one, but it affects what
-   a `withdraw` test against a long-dormant stream should expect.
+1. **Double approval of an already-met milestone** — **no-op, not an error.** A duplicate approval is
+   overwhelmingly a retry after an uncertain outcome, and erroring punishes the honest retry to
+   protect state that cannot change anyway (`Met` is terminal). It buys nothing against the mistake
+   people actually fear — approving the *wrong* milestone is a different call that would succeed
+   regardless. Two constraints: authorization is still checked first, so a non-approver is rejected
+   rather than silently absorbed; and no second event is emitted, so the indexer's fold never sees
+   one approval twice.
+2. **Cancel after the stream has reached `end`** — **permitted.** Note that the framing this section
+   previously carried was wrong: it claimed such a cancel would be "harmless" because "nothing is
+   unstreamed." That holds only when every milestone is resolved. With a milestone still unmet, the
+   tranche has streamed in full but is entirely `held`, and the unapproved-milestone rule returns it
+   to the sender — a real transfer, not a no-op. Permitting the call is what makes a never-approved
+   milestone recoverable at all; rejecting it would strand the tranche permanently.
+3. **Milestone revocation** — **no revocation.** Milestone state is monotonic and `Met` is terminal,
+   decided in [research/milestone-revocation.md](../research/milestone-revocation.md). Re-locking a
+   tranche after a withdrawal has settled would charge the shortfall against the recipient's other
+   tranches, because `withdrawn` is one stream-wide counter.
+4. **`create_stream` and non-standard transfer behaviour** — **store the measured balance delta.** The
+   contract reads its own balance either side of the transfer and stores what actually arrived, so
+   `total` is true by construction for every asset and the conservation invariant holds without
+   trusting the token. This fixes fee-on-transfer completely; rebasing assets remain unsupported,
+   since no creation-time measurement can bind a balance that moves afterwards.
+5. **Withdrawing from an archived entry** — **the contract never runs.** Called directly, the
+   transaction fails at the host level because the entry isn't in the footprint; there is no contract
+   branch to write and none could exist. Driven through simulation, Protocol 23 restores the entry
+   before the host function runs and every ordinary scenario applies unchanged. This is an SDK
+   obligation, not contract behaviour.
+
+Nothing in this document is currently marked `UNDECIDED`. When a future scenario finds a case the
+docs don't determine, mark it and add it here — an empty list is a fact about today, not a claim that
+the design is finished.
