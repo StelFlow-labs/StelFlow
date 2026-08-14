@@ -193,7 +193,7 @@ Every row satisfies `claimable = streamed − withdrawn − held`.
 
 Everything Alice deposited reached Bob. Nothing is stranded in the contract, and no stroop is unaccounted for.
 
-Day 10, 18, and 30 were chosen because each divides the portions evenly. At an arbitrary second the integer division truncates, so `streamed` can sit a few stroops below the real-valued figure. Those stroops are not lost — they are picked up as accrual moves past them, and at `end` the formula returns the exact total.
+Day 10, 18, and 30 were chosen because each divides the portions evenly. At an arbitrary second the integer division truncates, so `streamed` can sit a few stroops below the real-valued figure. Those stroops are not lost: `streamed` is recomputed from the formula on every call rather than accumulated, so truncation never compounds and accrual picks them up as it moves past them. The final withdrawal settles to exactly the deposit because the end-of-stream case pays out the remaining balance rather than recomputing — see [architecture.md](architecture.md#arithmetic).
 
 ## Cancellation and clawback
 
@@ -226,4 +226,5 @@ The last row is the one StelFlow is built for.
 
 - [glossary.md](glossary.md) — every term on this page in one place, plus the Soroban vocabulary.
 - [architecture.md](architecture.md) — how this is actually built on Soroban, and which constraints bend the design.
+- [specs/behaviour.md](specs/behaviour.md) — the semantics on this page turned into Given/When/Then scenarios, including the awkward cases.
 - [../ROADMAP.md](../ROADMAP.md) — the order it gets built in.

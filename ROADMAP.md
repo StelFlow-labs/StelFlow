@@ -46,7 +46,7 @@ The minimum thing that is genuinely a payment stream: linear accrual against led
 - [ ] Cliff support
 - [ ] TTL extension on every state-changing call, plus a public `bump_stream`
 - [ ] Events for every state change, designed for the indexer before the indexer exists
-- [ ] Unit tests against a mocked ledger clock, including: withdrawing twice in one ledger, withdrawing at exactly `start` and exactly `end`, a stream of duration 1, and a stream whose total doesn't divide evenly by its duration
+- [ ] Unit tests against a mocked ledger clock, including: withdrawing twice in one ledger, withdrawing at exactly `start` and exactly `end`, a stream of duration 1, and a stream whose total doesn't divide evenly by its duration — [docs/specs/behaviour.md](docs/specs/behaviour.md) has these written out as Given/When/Then scenarios already, use it as the checklist
 - [ ] Measure real footprint sizes and set `MAX_MILESTONES_PER_STREAM` and `MAX_BATCH_SIZE` from measurement
 
 **Done when:** a stream can be created and fully withdrawn on testnet, and the sum of withdrawals equals the deposit exactly, with no dust stranded.

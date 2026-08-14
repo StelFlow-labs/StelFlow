@@ -15,15 +15,17 @@ StelFlow has one maintainer today. That's a bus factor of one, and worth stating
 ## Contributors
 
 <!--
-Add yourself in the same PR as your contribution. Alphabetical by handle.
-Format:
+Maintainers add rows here when a PR merges. Contributors: don't edit this file
+in your PR — see "How you get added" below. Alphabetical by handle. Format:
 
 | [@handle](https://github.com/handle) | What you contributed | #PR or #issue |
 -->
 
 | Handle | Contribution | Ref |
 |---|---|---|
-| _Nobody yet._ Be first — see [CONTRIBUTING.md](CONTRIBUTING.md). | | |
+| [@d-plug](https://github.com/d-plug) | The worked Alice-and-Bob example in [concepts.md](docs/concepts.md) — StelFlow's first merged PR. Also caught that the doc's account of end-of-stream exactness didn't match architecture.md. | [#16](https://github.com/StelFlow-labs/StelFlow/pull/16) |
+| [@dannyy2000](https://github.com/dannyy2000) | The TTL and state-archival research in [research/ttl-strategy.md](docs/research/ttl-strategy.md), including the finding that no single extension can cover a multi-year stream, and the Protocol 23 correction to the SDK's restore flow. | [#21](https://github.com/StelFlow-labs/StelFlow/pull/21) |
+| [@Godbrand0](https://github.com/Godbrand0) | The behaviour specs in [specs/behaviour.md](docs/specs/behaviour.md) — 31 Given/When/Then scenarios and five design questions the docs turned out not to answer. The verified [dev-setup.md](docs/dev-setup.md), written by running every command and naming the two steps that weren't run rather than faking them. The docs CI workflow, including the two-job split that keeps external link rot from gating PRs. | [#26](https://github.com/StelFlow-labs/StelFlow/pull/26), [#27](https://github.com/StelFlow-labs/StelFlow/pull/27), [#28](https://github.com/StelFlow-labs/StelFlow/pull/28) |
 
 ## Design review and prior art
 

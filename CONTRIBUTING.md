@@ -20,62 +20,25 @@ Read [docs/architecture.md](docs/architecture.md) before contributing code. It e
 
 **Before you write code, comment on the issue saying you're taking it.** A maintainer will assign it to you. This costs you ten seconds and prevents two people shipping the same thing. If you go quiet for two weeks the issue gets unassigned — no hard feelings, just say so if you want it back.
 
+What happens if you skip that step, since the rule is only useful if you know what it costs you:
+
+- **A PR on an unassigned issue still gets reviewed.** You won't be turned away for missing the comment. The claim exists to stop duplicated effort, and if nobody else was working on it, nothing was lost.
+- **A PR on an issue assigned to someone else does not.** The assignee has right of way until they're unassigned, whoever pushed code first. If you have most of a solution already, say so on the issue and we'll sort it out — but don't assume that arriving with a finished diff wins the issue.
+- **If two unclaimed PRs land on one issue, the earlier claim wins; with no claim at all, the earlier PR does.** The other author gets first refusal on a related issue. This is a tiebreak, not a race to publish — nobody benefits from two people burning a weekend on the same doc.
+
+Claiming is one comment. It is the cheapest thing in this process and the only one that protects your time rather than ours.
+
 If nothing fits, open an issue describing what you want to do before building it. An unsolicited large PR is likely to conflict with something in the roadmap and get rejected on scope, which wastes your time more than it wastes ours.
 
 ## Local setup
 
-Nothing in this repo builds yet. This is the toolchain you'll need when Phase 1 lands.
+Nothing in this repo builds yet — Phase 1 is where contract crates arrive, see
+[ROADMAP.md](ROADMAP.md). What you need in the meantime, verified end-to-end by actually running
+it rather than transcribed from documentation, lives in
+[docs/dev-setup.md](docs/dev-setup.md): Rust, `wasm32v1-none`, `stellar-cli`, Node/pnpm, a funded
+testnet identity, and the commands to check current network limits. Start there.
 
-### Contracts (Rust + Soroban)
-
-```bash
-# Rust — 1.84 or newer, required by the wasm32v1-none target
-rustup install stable
-rustup target add wasm32v1-none
-
-# Stellar CLI (this is the tool formerly called soroban-cli)
-cargo install --locked stellar-cli
-
-# Verify
-rustc --version
-stellar --version
-```
-
-Contracts build to `wasm32v1-none`, not the older `wasm32-unknown-unknown`. If you find a tutorial using the old target, it predates the current SDK.
-
-```bash
-stellar contract build       # build the Wasm
-cargo test                   # unit tests, run against a mocked ledger
-cargo fmt --all              # formatting is enforced in CI
-cargo clippy --all-targets -- -D warnings
-```
-
-### Testnet identity
-
-```bash
-stellar keys generate --global alice --network testnet --fund
-stellar keys address alice
-```
-
-Never put a mainnet key in a config file in this repo. There is no reason to have one here.
-
-### SDK and dashboard (Node)
-
-```bash
-node --version   # 22 LTS or newer
-corepack enable  # we use pnpm
-pnpm install
-```
-
-<!-- TODO(maintainer): pin the exact Node version in .nvmrc and the package manager version in package.json#packageManager once the workspace exists, then update this section to match. -->
-
-### Checking network limits
-
-Several design constants depend on live network settings, which change between protocol upgrades. Don't trust numbers in docs — including ours:
-
-```bash
-stellar network settings --network testnet
-```
+<!-- TODO(maintainer): pin the exact Node version in .nvmrc and the package manager version in package.json#packageManager once the SDK/dashboard workspace exists. -->
 
 ## Branches
 
