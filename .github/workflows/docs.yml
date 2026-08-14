@@ -1,0 +1,78 @@
+name: docs
+
+# Markdown lint and link checking for pull requests that touch docs.
+# Actions are pinned to a commit SHA (not a mutable tag) as a supply-chain precaution — the
+# trailing comment records which tagged release that SHA corresponds to.
+on:
+  pull_request:
+    paths:
+      - "**/*.md"
+      - ".markdownlint-cli2.jsonc"
+      - "lychee.toml"
+      - ".github/workflows/docs.yml"
+  schedule:
+    # Mondays 06:00 UTC — external link health only, never gates a PR. See the note at the
+    # bottom of this file for why this is split from the per-PR internal link check.
+    - cron: "0 6 * * 1"
+  workflow_dispatch: {}
+
+# Only one run per PR needs to be live; superseded pushes cancel their predecessor's run.
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  markdownlint:
+    name: markdown lint
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: DavidAnson/markdownlint-cli2-action@21c1be1b93ad9ed58fa840aacc3f279cde2a72ff # v24.2.0
+        with:
+          globs: "**/*.md"
+
+  link-check-internal:
+    name: link check (internal, blocking)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          # Relative-link-only pass: fast, deterministic, and immune to third-party outages.
+          # --offline is what does that — it makes lychee skip every network request entirely, so
+          # only file-relative links and same-repo heading anchors get checked (the latter via
+          # lychee.toml's include_fragments = true). This is the job that fails a PR.
+          args: >-
+            --no-progress
+            --offline
+            --include-fragments
+            --config lychee.toml
+            "**/*.md"
+          fail: true
+
+  link-check-external:
+    name: link check (external, scheduled)
+    # External hosts rate-limit, 500, or time out for reasons that have nothing to do with the PR
+    # under review — see the workflow-level comment below. Runs weekly instead of per-PR, and is
+    # allowed to fail without blocking anything; it exists to surface rot, not to gate merges.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --no-progress
+            --include-fragments
+            --config lychee.toml
+            "**/*.md"
+          fail: false
+
+# On the external-link tradeoff: this workflow deliberately runs two separate link-check jobs.
+# `link-check-internal` runs on every PR, offline, so it only validates relative file links and
+# in-repo heading anchors — the case CONTRIBUTING.md cross-references depend on, and the case a
+# markdown restructure can silently break. `link-check-external` runs weekly on a schedule (plus
+# workflow_dispatch for an on-demand run) and never fails the build, because external link health
+# is a fact about the internet's uptime on a given Monday, not about this PR's correctness.

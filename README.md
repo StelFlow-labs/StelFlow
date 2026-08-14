@@ -23,7 +23,7 @@ Target uses: grant disbursement, DAO payroll, and vesting with cliffs — the ca
 
 A few payment-streaming projects exist in the Soroban ecosystem, mostly hackathon-scale MVPs implementing linear time-based streaming. They demonstrate the primitive works. None of them, as far as we can tell, combine milestone gating, cancellation with clawback of unstreamed funds, and an escrow integration path — and none are audited or in production use.
 
-That's a claim that needs checking rather than asserting, so it's [an open issue](../../issues) for a contributor to survey properly and write up honestly. If the survey finds something that already does this well, that's worth knowing before more is built, and the finding gets published either way.
+That's a claim that needs checking rather than asserting, so it's [an open issue](https://github.com/StelFlow-labs/StelFlow/issues) for a contributor to survey properly and write up honestly. If the survey finds something that already does this well, that's worth knowing before more is built, and the finding gets published either way.
 
 ## Architecture
 
