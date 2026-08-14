@@ -210,6 +210,8 @@ On cancel:
 
 Point 4 is a deliberate choice: an unmet milestone is work that didn't happen, so its funds go back. Point 2 is the other half of the deal — cancellation is not a clawback of earned money. ["Clawback" in StelFlow](glossary.md#clawback-stelflow-sense) means only the unstreamed remainder.
 
+**A cancelable stream can be cancelled after it ends, and that isn't pointless.** Once `now` passes `end` there is no unstreamed remainder, so on a stream with no milestones — or with all of them approved — cancelling refunds nothing and changes nothing the recipient can claim. But an *unmet* milestone at that point has accrued in full and is still held, and point 4 sends the whole tranche back to the sender. So cancelling after the end is the one thing that resolves a milestone nobody ever approved. It is also the only such resolution that exists today, which is a strong argument for creating grant streams cancelable.
+
 > Note: this is distinct from [the Stellar Asset Contract's `clawback`](glossary.md#clawback-issuer-sense), which is an *issuer* power to burn an asset from any holder. If the asset you stream has issuer clawback enabled, the issuer can pull funds out from under a live stream, and StelFlow cannot prevent that. Check the asset's flags before you rely on a stream.
 
 ## How this differs from what already exists
