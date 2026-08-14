@@ -27,13 +27,13 @@ If you can't or won't use GitHub, email **<jethroirmiya@gmail.com>** with `[Stel
 
 ### What to expect
 
-|                        | Target                                             |
-| ---------------------- | -------------------------------------------------- |
-| Acknowledgement        | 48 hours                                           |
-| Initial assessment     | 5 business days                                    |
+| | Target |
+|---|---|
+| Acknowledgement | 48 hours |
+| Initial assessment | 5 business days |
 | Fix or mitigation plan | Depends on severity; you'll get a written timeline |
 
-If you don't hear back within 48 hours, escalate by mentioning a maintainer in a _public issue_ — say only that you sent a private report and got no reply, with no details of the vulnerability itself.
+If you don't hear back within 48 hours, escalate by mentioning a maintainer in a *public issue* — say only that you sent a private report and got no reply, with no details of the vulnerability itself.
 
 These targets are what a small maintainer team can realistically hit. They are not a contractual SLA.
 
