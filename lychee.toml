@@ -6,14 +6,20 @@
 # makes the internal job worth having — StelFlow's docs cross-reference each other by heading
 # anchor (e.g. docs/architecture.md#open-questions), and a heading rename silently breaks those
 # without this on. Headings with em dashes or emoji (this repo has both — see ROADMAP.md's phase
-# headings) produce non-obvious GitHub-style anchors; this is deliberately verified against a
-# broken anchor pushed to this PR for the maintainer to watch fail, then removed — see the PR
-# description for the run.
-include_fragments = true
+# headings) produce non-obvious GitHub-style anchors.
+#
+# Verified in CI, not assumed: a deliberately broken anchor was pushed to PR #29 and the blocking
+# job failed on it — 289 links checked, 1 error, "Cannot find fragment", exit 2. Removing the
+# anchor turned the same job green in 10 seconds. Runs 31779231033 (red) and 31779305943 (green).
+#
+# Takes a mode string, not a bool. "full" checks anchor and text fragments.
+include_fragments = "full"
 
 # Mailto links (SECURITY.md, CODE_OF_CONDUCT.md) aren't checkable without an SMTP probe and
-# shouldn't be treated as broken links.
-exclude_mail = true
+# shouldn't be treated as broken links. lychee spells this include_mail (default false) — there is
+# no exclude_mail key, and an unknown key makes lychee reject the whole config rather than ignore
+# it, which fails the job with exit 3 before it reads a single link.
+include_mail = false
 
 # Give slow-but-legitimate external hosts room before the scheduled external run calls them dead.
 timeout = 20
@@ -25,4 +31,4 @@ max_retries = 2
 # "alive" trades a small amount of blindness to an actually-dead github.com link for not crying
 # wolf most weeks — the scheduled job already never fails the build (see docs.yml), so this only
 # affects whether a given link's line in the report reads "OK" or "rate limited"/red.
-accept = [200, 429]
+accept = ["200", "429"]
