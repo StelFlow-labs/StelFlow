@@ -64,16 +64,18 @@ You will be credited in the advisory and in [CONTRIBUTORS.md](CONTRIBUTORS.md) u
 
 The reasoning behind this list, threat by threat, is in
 [docs/research/threat-model.md](docs/research/threat-model.md) — including which risks are accepted
-rather than mitigated, and the design decisions that are still open. Start there if you're looking
-for somewhere to dig.
+rather than mitigated, and the design decisions that are still open. Two of its highest-ranked
+threats were closed by *removing* the capability rather than guarding it, which is why the list below
+now includes attacks on those limits themselves. Start there if you're looking for somewhere to dig.
 
 If you're deciding where to look, these are the classes that would hurt most:
 
-1. **Value leakage.** Any sequence where withdrawals plus refunds plus remaining balance doesn't equal deposits.
+1. **Value leakage.** Any sequence where withdrawals plus refunds plus remaining balance doesn't equal deposits. Note that this is a *closure* check across the whole contract: it still balances if one stream is paid out of another's deposit, so we care separately about any payout exceeding its own stream's `total - withdrawn`. The contract's token balance is pooled, and that assertion is what keeps streams isolated from each other.
 2. **Stranded funds.** Any state where an earned balance can never be withdrawn — including resource exhaustion, where a stream grows large enough that a withdrawal exceeds the transaction's read or instruction budget.
-3. **Authorization bypass.** Withdrawing as a non-recipient, approving as a non-approver, cancelling a non-cancelable stream.
+3. **Authorization bypass.** Withdrawing as a non-recipient, approving as a non-approver, or cancelling a non-cancelable stream without **both** the sender's and the recipient's authorization.
 4. **Accrual manipulation.** Anything that makes the contract compute a claimable balance that doesn't match elapsed ledger time.
 5. **Archival traps.** A stream that archives into a state it can't be correctly restored from.
+6. **Escaping the limits on privilege.** The contract is [non-upgradeable and has no admin over funds](docs/research/upgradeability-and-pause.md); the sole global role can only stop `create_stream`, auto-expires, and can be renounced. So: any path that creates a stream while paused, a pause that fails to expire, a way to restore a renounced pauser, or anything that lets a privileged address reach a stream it isn't a party to.
 
 ## Bug bounty
 

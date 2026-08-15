@@ -84,7 +84,7 @@ The PR template asks for these. It isn't ceremony — reviewers use it to decide
 Two things get a hard "no" regardless of how good the code is:
 
 1. **It can lose or strand funds.** Rounding that doesn't conserve value, a path where an earned balance becomes unwithdrawable, an unbounded loop or collection that can push a withdrawal past the transaction resource limit. If your change touches accrual math or storage layout, expect close review and expect to be asked for property tests.
-2. **It gives someone power they shouldn't have.** An admin who can pause withdrawals, an approver who can redirect funds, an upgrade path with no stated policy. Read [docs/architecture.md](docs/architecture.md#authorization).
+2. **It gives someone power they shouldn't have.** An admin who can pause withdrawals, an approver who can redirect funds, an upgrade function of any kind. These aren't hypotheticals to be weighed case by case — the contract is [non-upgradeable and the pause reaches only `create_stream`](docs/research/upgradeability-and-pause.md), decided deliberately, so a PR reintroducing either is reversing a settled decision and should say so and argue for it rather than slip it in. Read [docs/architecture.md](docs/architecture.md#authorization).
 
 Beyond that, review is about clarity. Contract code is read far more often than written, and it's read by auditors who are trying to break it. Prefer the obvious implementation over the clever one. If a function needs a comment to explain *what* it does, it probably needs a different shape; comments explaining *why* are always welcome.
 

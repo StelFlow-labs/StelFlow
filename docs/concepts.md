@@ -42,7 +42,7 @@ The working set for this page. [glossary.md](glossary.md) has the full list, inc
 | Term | Meaning |
 |---|---|
 | **[Stream](glossary.md#stream)** | One sender → one recipient, one asset, one schedule. The unit of everything. |
-| **[Sender](glossary.md#sender)** | Funds the stream at creation. May cancel if the stream is cancelable. |
+| **[Sender](glossary.md#sender)** | Funds the stream at creation. May cancel alone if the stream is cancelable; otherwise only jointly with the recipient. |
 | **[Recipient](glossary.md#recipient)** | Accrues continuously; calls `withdraw` to settle. |
 | **[Streamed](glossary.md#streamed)** | Amount the formula says has accrued so far. |
 | **[Withdrawn](glossary.md#withdrawn)** | Amount actually paid out. Always ≤ streamed. |
@@ -201,6 +201,8 @@ Day 10, 18, and 30 were chosen because each divides the portions evenly. At an a
 
 A stream can be created [cancelable](glossary.md#cancelable) or not. Non-cancelable is the right default for vesting: the recipient needs a guarantee. Cancelable is the right default for grants: the funder needs an exit if the work stops.
 
+**Precisely, `cancelable = false` means the sender cannot cancel *unilaterally* — not that the stream can never be cancelled.** The sender and the recipient acting together can always cancel, and the settlement rules below apply unchanged when they do. This takes nothing from the recipient, whose guarantee was always about the sender acting alone, and it means a non-cancelable stream is not a dead end when both parties want out — which matters because the contract is [non-upgradeable](research/upgradeability-and-pause.md), so an unbreakable stream would be unbreakable for the life of the contract. Neither party can do it alone, in either direction.
+
 On cancel:
 
 1. Accrual freezes at the cancellation ledger's timestamp.
@@ -210,7 +212,7 @@ On cancel:
 
 Point 4 is a deliberate choice: an unmet milestone is work that didn't happen, so its funds go back. Point 2 is the other half of the deal — cancellation is not a clawback of earned money. ["Clawback" in StelFlow](glossary.md#clawback-stelflow-sense) means only the unstreamed remainder.
 
-**A cancelable stream can be cancelled after it ends, and that isn't pointless.** Once `now` passes `end` there is no unstreamed remainder, so on a stream with no milestones — or with all of them approved — cancelling refunds nothing and changes nothing the recipient can claim. But an *unmet* milestone at that point has accrued in full and is still held, and point 4 sends the whole tranche back to the sender. So cancelling after the end is the one thing that resolves a milestone nobody ever approved. It is also the only such resolution that exists today, which is a strong argument for creating grant streams cancelable.
+**A cancelable stream can be cancelled after it ends, and that isn't pointless.** Once `now` passes `end` there is no unstreamed remainder, so on a stream with no milestones — or with all of them approved — cancelling refunds nothing and changes nothing the recipient can claim. But an *unmet* milestone at that point has accrued in full and is still held, and point 4 sends the whole tranche back to the sender. So cancelling after the end is the one thing that resolves a milestone nobody ever approved. On a non-cancelable stream the same resolution is available, but it needs the recipient's signature alongside the sender's — and since it returns the tranche to the sender, the recipient is being asked to sign away work they may have done. They may well refuse. A cancelable stream lets the funder resolve it without that negotiation, which is a strong argument for creating grant streams cancelable.
 
 > Note: this is distinct from [the Stellar Asset Contract's `clawback`](glossary.md#clawback-issuer-sense), which is an *issuer* power to burn an asset from any holder. If the asset you stream has issuer clawback enabled, the issuer can pull funds out from under a live stream, and StelFlow cannot prevent that. Check the asset's flags before you rely on a stream.
 
