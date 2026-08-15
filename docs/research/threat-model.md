@@ -34,11 +34,11 @@ different and more tractable problem.
 
 | # | Threat | Severity | Likelihood | Priority | Status |
 |---|---|---|---|---|---|
-| [T1](#t1--upgrade-authority-is-the-largest-trust-concentration-in-the-system) | Upgrade authority replaces the accrual logic | Critical | Decision-dependent | **P0** | Open decision |
+| [T1](#t1--upgrade-authority-is-the-largest-trust-concentration-in-the-system) | Upgrade authority replaces the accrual logic | Critical | **None** | **P0** | **Closed — capability removed** |
 | [T2](#t2--resource-exhaustion-as-denial-of-withdrawal) | Resource exhaustion makes a stream unwithdrawable | Critical | Medium | **P0** | Mitigated by design, caps unset |
-| [T3](#t3--an-approver-who-never-comes-back) | Approver disappears; tranche locked forever | High | Medium | **P1** | Unmitigated |
+| [T3](#t3--an-approver-who-never-comes-back) | Approver disappears; tranche locked forever | High | Medium | **P1** | **Partially mitigated** |
 | [T4](#t4--non-standard-tokens-produce-under-funded-streams) | Fee-on-transfer token under-funds a stream | High | Low–Medium | **P1** | **Mitigated** |
-| [T5](#t5--an-emergency-stop-that-can-freeze-withdrawals) | Pause blocks withdrawal of earned funds | High | Decision-dependent | **P1** | Open decision |
+| [T5](#t5--an-emergency-stop-that-can-freeze-withdrawals) | Pause blocks withdrawal of earned funds | High | **None** | **P1** | **Mitigated by scope** |
 | [T6](#t6--the-sender-controls-the-approver) | Sender names themselves approver, never approves, cancels | Medium | Medium | **P2** | Accepted + disclosure |
 | [T7](#t7--issuer-clawback) | Issuer claws back funds from a live stream | Critical | Low, asset-dependent | **P2** | Accepted, out of scope |
 | [T8](#t8--archival-economics-as-a-griefing-vector) | Restore cost made large relative to stream value | Medium | Low | **P3** | Partially mitigated |
@@ -47,8 +47,13 @@ different and more tractable problem.
 | [T11](#t11--ledger-timestamp-influence) | Validator influences close time to shift accrual | Low | Very low | **P4** | Accepted |
 | [T12](#t12--rounding-and-dust-extraction) | Repeated withdrawals extract more than the formula allows | — | — | — | **Not a threat** — see proof |
 
-Three of the top five are open design questions rather than attacks. That is the honest state of the
-design, and it's the useful output of doing this before Phase 1 rather than after.
+When this model was first written, three of the top five were open design questions rather than
+attacks — which was the useful output of doing it before Phase 1 rather than after. All three have
+since been decided (T1 and T5 in
+[upgradeability-and-pause.md](upgradeability-and-pause.md), T4 in
+[#32](https://github.com/StelFlow-labs/StelFlow/issues/32)), and in two of the three the decision was
+to **remove the capability rather than guard it**, which is why their likelihood column now reads
+None. T3 is the one still carrying real residual risk, and it is the top of the list to finish.
 
 ---
 
@@ -64,15 +69,24 @@ model comes close.
 
 **Cost:** one transaction, if the key exists.
 
-**Mitigation.** This is [open question 4](../architecture.md#open-questions) and it is not yet
-decided. The threat model's answer: **a custody contract should not be unilaterally upgradeable.**
-Either ship non-upgradeable with a documented migration path — users move to a new contract by
-cancelling and re-creating, which is transparent and opt-in — or, if upgradeability is kept, put it
-behind a multisig *and* a timelock long enough that a recipient watching the chain can withdraw
-before an upgrade lands. An instant unilateral upgrade key makes every other mitigation in this
-document decorative.
+**Mitigation. Decided: the contract ships non-upgradeable** — no upgrade function in the source, so
+there is no key to compromise, coerce, or lose. Only a contract can replace its own Wasm, so an
+absent function is permanent immutability rather than a policy needing enforcement. Settled in
+[upgradeability-and-pause.md](upgradeability-and-pause.md).
 
-**Status:** open decision, recommended answer above.
+This model originally offered a second acceptable answer — upgradeability behind a multisig plus a
+timelock long enough for recipients to withdraw first — and **that half was wrong.** It borrowed a
+vault pattern that does not survive contact with streaming. A timelock protects only what a user can
+withdraw during it, and a stream's defining property is that most of the money is not withdrawable
+yet: against a four-year vest, a 30-day timelock lets a perfectly attentive recipient rescue **2.1%**
+if the attacker announces early, and the attacker picks when to announce. Gated tranches can't be
+rescued at all, and a recipient inside a cliff rescues nothing. A timelock long enough to actually
+protect a stream would have to outlast the stream, which is non-upgradeability plus a key someone can
+be compelled to use. The arithmetic is tabulated in the decision doc.
+
+**Status:** **Closed by removing the capability.** What remains reportable is narrower — see T5 for
+the pause that replaces it as the only incident response, and note that this makes recovery paths a
+now-or-never design problem, which is why T3 below moved.
 
 ## T2 — Resource exhaustion as denial of withdrawal
 
@@ -118,17 +132,31 @@ contract that was superseded, or someone who simply stopped answering.
 
 **Impact:** the gated tranche accrues normally and is never claimable. On a **cancelable** stream the
 sender can cancel and recover it — the recipient loses work they may have done, but the funds aren't
-destroyed. On a **non-cancelable** stream there is currently **no recovery path for anyone**. The
-tranche accrues to a balance nobody can ever move. Non-cancelable is the recommended default for
-vesting, so this lands on exactly the streams where the recipient's guarantee matters most.
+destroyed. On a **non-cancelable** stream this used to mean **no recovery path for anyone**, with the
+tranche accruing to a balance nobody could ever move. Non-cancelable is the recommended default for
+vesting, so it landed on exactly the streams where the recipient's guarantee matters most.
+
+**That dead end is now partially open.** [T1's decision](#t1--upgrade-authority-is-the-largest-trust-concentration-in-the-system)
+forced the same question from a different direction — a non-cancelable stream also can't migrate off
+a contract that can never be patched — and two unrelated causes producing one identical dead end was
+the signal that the dead end was the defect. `cancelable = false` now means *the sender cannot cancel
+unilaterally* rather than *nobody can cancel*: with both the sender's and the recipient's
+authorization, `cancel` proceeds under the unchanged settlement rules. **The honest limit is that
+this makes the funds movable without deciding who deserves them.** Rule 4 returns the unapproved
+tranche to the sender in full, so a recipient who did the work is signing it away and will often be
+right to refuse — at which point the funds stay stranded. The parties can settle off-chain; the
+contract does not adjudicate and should not pretend to.
 
 **Cost:** zero, and it doesn't require malice — indefinite silence is the whole attack.
 
-**Mitigation.** None today. Options, roughly in order of how much I'd argue for them:
+**Mitigation.** Partial, per above: unanimous-consent cancel gives the funds a way out, but only when
+both parties agree on an outcome the contract computes rather than negotiates. The remaining options,
+roughly in order of how much I'd argue for them — and note that T1 has made these urgent, because a
+non-upgradeable contract cannot have a recovery path retrofitted onto streams created without one:
 
 1. **A per-milestone deadline set at creation**, after which the tranche resolves to a default
    declared up front — to the recipient, or to the sender, chosen by whoever creates the stream and
-   visible to both before anyone signs. This keeps the contract's "no global admin" property intact
+   visible to both before anyone signs. This keeps the contract's no-role-has-power-over-funds property intact
    because the resolution is a term of the stream, not a privilege someone exercises.
 2. **A fallback approver, or k-of-n approvers.** Removes the single point of failure but adds
    milestone-struct size, which pushes directly against T2's cap.
@@ -181,13 +209,24 @@ emergency stop and whether it can stop withdrawals.
 by a third party. That is the same outcome as T3 with an owner attached, and it is indistinguishable
 from a rug from the recipient's side.
 
-**Mitigation.** The question in architecture.md already contains the answer, and this model states it
-plainly: **a pause must never be able to block `withdraw`.** Pausing `create_stream` is defensible —
-it stops new exposure during an incident and takes nothing from anyone. Pausing withdrawal converts a
-custody contract into a discretionary one. If the only way to make an incident survivable is to
-freeze earned funds, the design is wrong somewhere else.
+**Mitigation. Decided: `create_stream` is the only pausable entry point.** `withdraw`, `cancel`,
+`approve_milestone`, and TTL extension never are, so a pause cannot reach a stream that already
+exists. The pause auto-expires after 30 days and can be renounced permanently — both necessary
+because T1's decision means a stuck pause could never be patched out. Settled in
+[upgradeability-and-pause.md](upgradeability-and-pause.md#pausing-scoped-by-entry-point).
 
-**Status:** open decision, recommended answer above.
+This model's original sentence — *a pause must never be able to block `withdraw`* — survives, but it
+was under-argued, and the counter-case deserves recording because it is stronger than it first looks.
+**The contract's token balance is pooled**, not segregated per stream, so an accrual bug that
+over-credits one stream pays it out of another's deposit — a race in which fast recipients drain slow
+ones, and the loss lands on people whose streams were never buggy. Freezing withdrawals would stop
+that race. It still loses on two counts: the containment belongs in an invariant rather than a key
+(assert `payout <= total - withdrawn` per stream, one comparison on an entry already loaded, always
+on, nobody needs to be awake), and a human-operated pause arrives minutes-to-hours after a scripted
+drain that completes in one ledger. The decisive asymmetry: **a withdrawal pause's defensive value is
+conditional on human reaction time; its abuse value is not.**
+
+**Status:** **Mitigated by scope.** The capability to freeze earned funds does not exist.
 
 ## T6 — The sender controls the approver
 
@@ -424,12 +463,21 @@ Collected so they can be argued with individually:
 
 1. **Set `MAX_MILESTONES_PER_STREAM` from measurement** before Phase 2 (T2, T8).
 2. **Hold the rule that `withdraw`'s cost never grows with a stream's history** (T2).
-3. **Decide milestone deadlines or fallback approvers** alongside
-   [issue #17](https://github.com/StelFlow-labs/StelFlow/issues/17) (T3).
+3. **Decide milestone deadlines or fallback approvers — before Phase 2 or not at all** (T3, T1). This
+   was originally to be decided alongside [#17](https://github.com/StelFlow-labs/StelFlow/issues/17),
+   which settled revocation but left deadlines open. #33 made it urgent rather than merely wanted: a
+   non-upgradeable contract cannot retrofit a recovery path onto streams already created without one.
+   Unanimous-consent cancel covers part of T3 and is not a substitute for this.
 4. ~~**`create_stream` should store the measured balance delta, not the requested total** (T4).~~ **Done** — decided in #32.
-5. **If a pause exists, it must not be able to block `withdraw`** (T5).
-6. **Non-upgradeable, or upgradeable behind multisig plus a timelock** (T1).
-7. **SDK and dashboard must surface approver identity, gated fraction, clawback flag, and estimated
+5. ~~**If a pause exists, it must not be able to block `withdraw`** (T5).~~ **Done** — decided in #33.
+   `create_stream` is the only pausable entry point; the pause auto-expires and can be renounced.
+6. ~~**Non-upgradeable, or upgradeable behind multisig plus a timelock** (T1).~~ **Done** — decided in
+   #33, and the second half of that recommendation was withdrawn as wrong. Non-upgradeable, no
+   upgrade function at all.
+7. **Assert `payout <= total - withdrawn` per stream** on `withdraw` and `cancel` (T5). The contract's
+   token balance is pooled; this is what stops one stream's accrual bug reaching another's deposit,
+   and it is the reason a withdrawal pause isn't needed.
+8. **SDK and dashboard must surface approver identity, gated fraction, clawback flag, and estimated
    restore cost** (T6, T7, T8).
 
 ## What this model doesn't cover
@@ -451,4 +499,7 @@ Collected so they can be argued with individually:
 - [../specs/behaviour.md](../specs/behaviour.md) — the value-conservation invariant T4 and T12 are
   about, asserted scenario by scenario.
 - [../../SECURITY.md](../../SECURITY.md) — reporting process and scope.
-- [../architecture.md](../architecture.md#open-questions) — open questions 4 and 5 are T1 and T5.
+- [upgradeability-and-pause.md](upgradeability-and-pause.md) — the decisions that closed T1 and T5,
+  and partially opened T3.
+- [../architecture.md](../architecture.md#open-questions) — open questions 4 and 5 were T1 and T5;
+  both now record the decision rather than the question.

@@ -20,7 +20,7 @@ The address authorized to mark a [milestone](#milestone) met, named per mileston
 
 ### Cancelable
 
-A property fixed at creation determining whether the sender may [cancel](#cancellation) the stream. Non-cancelable is the usual choice for vesting, where the recipient needs a guarantee; cancelable is the usual choice for grants, where the funder needs an exit if the work stops.
+A property fixed at creation determining whether the sender may [cancel](#cancellation) the stream **alone**. Non-cancelable is the usual choice for vesting, where the recipient needs a guarantee; cancelable is the usual choice for grants, where the funder needs an exit if the work stops. Note the precise meaning: on a non-cancelable stream the sender and recipient acting *together* can still cancel, settling under the ordinary rules. The flag governs unilateral power, not the existence of an exit.
 
 ### Cancellation
 

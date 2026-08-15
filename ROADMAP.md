@@ -28,7 +28,7 @@ The current phase. Get the design written down well enough that someone can disa
 
 - [x] README, concepts, architecture
 - [x] Contribution setup — templates, code of conduct, security policy
-- [ ] Resolve the open questions in [docs/architecture.md](docs/architecture.md#open-questions): stream IDs, milestone revocation, upgradeability, pausing
+- [ ] Resolve the open questions in [docs/architecture.md](docs/architecture.md#open-questions): ~~milestone revocation~~ (done, #17), ~~upgradeability~~ and ~~pausing~~ (done, #33), stream IDs and multiple recipients still open
 - [ ] Write the contract interface as a Rust trait with no implementation, and review it as a PR before anything is built behind it
 - [ ] Decide the workspace layout (contract crates, SDK package, dashboard app, indexer service)
 
@@ -128,7 +128,7 @@ Contract events into queryable history.
 
 - [ ] Deployment with published, verifiable Wasm hashes
 - [ ] Reproducible builds so anyone can confirm the deployed Wasm matches this source
-- [ ] Documented upgrade or migration policy, decided in Phase 0
+- [x] Documented upgrade or migration policy, decided in Phase 0 — [non-upgradeable, with migration by cancel-and-recreate](docs/research/upgradeability-and-pause.md). What remains for this phase is *executing* it: publishing the policy where users see it before they sign, not deciding it.
 - [ ] Monitoring and incident runbook
 
 **Done when:** there is a mainnet address in the README and it's the real one.

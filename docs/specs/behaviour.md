@@ -1,6 +1,8 @@
 # Behaviour specs: create_stream, withdraw, cancel, approve_milestone
 
-Given/When/Then scenarios for the four entry points, written against the semantics in
+Given/When/Then scenarios for the four stream entry points — plus the pause, which is administrative
+rather than a stream operation and is specified here mainly to pin down what it cannot reach — written
+against the semantics in
 [docs/concepts.md](../concepts.md) and [docs/architecture.md](../architecture.md). None of this is
 implemented — this is the checklist the eventual `#[test]` functions turn into, and a place to argue
 with the design before code makes arguing expensive.
@@ -18,6 +20,11 @@ Conventions used throughout:
   `claimable = streamed_total - withdrawn - held`.
 - **The invariant that must hold after every state-changing call:** `deposit == withdrawn + refunded +
 remaining_in_contract`. Every scenario below that changes state asserts this explicitly.
+- **The per-stream solvency assertion:** every payout satisfies `payout <= total - withdrawn` for the
+  stream it is paid from. The contract's token balance is pooled across all streams, so this is what
+  bounds a stream's lifetime extraction to its own deposit — the conservation invariant above is a
+  closure check and would still balance if one stream were paid out of another's money. The two are
+  not the same assertion and Phase 1 should test both.
 - Every entry point calls `require_auth` on a specific address (see
   [architecture.md#authorization](../architecture.md#authorization)). Every scenario states who is
   calling and asserts unauthorized callers are rejected without side effects.
@@ -386,15 +393,61 @@ Then the call is rejected
 And no funds move and the stream's state is unchanged
 ```
 
-### Scenario: rejected — cancel on a non-cancelable stream
+### Scenario: rejected — cancel on a non-cancelable stream, sender authorizing alone
 
 ```gherkin
 Given a stream created with cancelable=false
 And any elapsed time, including zero
-When the sender calls cancel()
+When the sender calls cancel() with only the sender's authorization
 Then the call is rejected
 And no funds move — the stream continues to Completed on its own schedule
+And the rejection is for missing authorization, not for the stream being uncancelable
 ```
+
+### Scenario: cancel on a non-cancelable stream with both signatures — permitted, settling exactly as a normal cancel
+
+```gherkin
+Given the Alice-and-Bob stream created with cancelable=false
+And 30,000,000,000 deposited over 30 days, of which 12,000,000,000 is gated on one milestone
+And now = start + 10 days
+And withdrawn = 6,000,000,000
+And the milestone is Unmet
+When cancel() is called with BOTH the sender's and the recipient's authorization
+Then the call succeeds
+And settlement follows cancellation rules 1-4 unchanged — there is no separate code path
+And streamed_total = 10,000,000,000, of which held = 4,000,000,000
+And Bob's frozen claimable = 10,000,000,000 - 6,000,000,000 - 4,000,000,000 = 0
+And the refund to Alice = 30,000,000,000 - 10,000,000,000 unstreamed
+                        + 4,000,000,000 accrued-but-unapproved = 24,000,000,000
+And deposit (30,000,000,000) == withdrawn (6,000,000,000) + refunded (24,000,000,000)
+                              + remaining_in_contract (0)
+And the same cancel event is emitted as for a cancelable stream — the indexer needs no new case
+```
+
+This is the whole of the two-signature rule: `cancelable=false` means the sender cannot cancel
+*unilaterally*, not that nobody can. See
+[research/upgradeability-and-pause.md](../research/upgradeability-and-pause.md#the-fix-cancel-by-unanimous-consent).
+
+### Scenario: rejected — a third party cannot supply the second signature
+
+```gherkin
+Given a stream created with cancelable=false
+When cancel() is called with the sender's authorization and any address other than the recipient's
+Then the call is rejected
+And no funds move
+```
+
+### Scenario: rejected — the recipient cannot cancel a non-cancelable stream alone
+
+```gherkin
+Given a stream created with cancelable=false
+When cancel() is called with only the recipient's authorization
+Then the call is rejected
+And no funds move
+```
+
+The two-signature rule is symmetric: it grants the recipient no unilateral power either. It is a
+joint action or it is nothing.
 
 ### Scenario: cancel with zero elapsed time
 
@@ -459,6 +512,77 @@ When the sender calls cancel()
 Then the approved milestone's accrued-to-date amount is treated exactly like the base tranche: streamed_total (20,000,000,000) minus withdrawn (18,000,000,000) is 2,000,000,000 of frozen, still-owed claimable that stays with the recipient — it is not clawed back
 And only the still-unstreamed remainder of both tranches combined returns to the sender: deposit (30,000,000,000) - streamed_total (20,000,000,000) = 10,000,000,000 — there is no unmet-milestone forfeiture here, because there is no unmet milestone
 And deposit (30,000,000,000) == withdrawn (18,000,000,000) + refunded (10,000,000,000) + remaining_in_contract (2,000,000,000, the recipient's frozen claimable still to be withdrawn)
+```
+
+---
+
+## Feature: pause
+
+The pause covers exactly one entry point. These scenarios exist mostly to pin down what it *cannot*
+do, since that is the load-bearing half — see
+[research/upgradeability-and-pause.md](../research/upgradeability-and-pause.md#pausing-scoped-by-entry-point).
+
+### Scenario: pausing blocks create_stream and nothing else
+
+```gherkin
+Given the pauser has paused the contract
+And an existing stream mid-flight with claimable > 0
+When anyone calls create_stream()
+Then the call is rejected
+But when the recipient calls withdraw()
+Then it succeeds and pays the full claimable, exactly as if the contract were not paused
+And cancel(), approve_milestone(), and TTL extension all succeed unchanged
+```
+
+### Scenario: rejected — only the pauser can pause
+
+```gherkin
+Given any address that is not the current pauser
+When it calls pause() or unpause()
+Then the call is rejected
+And the paused state is unchanged
+```
+
+### Scenario: the pause expires on its own
+
+```gherkin
+Given the pauser paused the contract at time T
+And nobody has renewed it
+When now >= T + 30 days
+Then create_stream() succeeds again with no transaction required from anyone
+And the contract needs no intervention to recover — which is the point, since a non-upgradeable
+    contract could never be patched to release a stuck pause
+```
+
+### Scenario: renouncing the pauser role is permanent
+
+```gherkin
+Given the pauser renounces the role
+When any address, including the former pauser, calls pause()
+Then the call is rejected
+And no address can ever set the pauser again — there is no upgrade path to restore it
+```
+
+### Scenario: a paused contract still cannot touch existing funds
+
+```gherkin
+Given the contract is paused
+And the pauser is also the sender of some unrelated stream
+When the pauser attempts any action against a stream they are not a party to
+Then the call is rejected on the stream's own per-stream authorization, not on the pause
+And the pause grants no authority over any stream — it is a create-time gate, not a role over funds
+```
+
+### Scenario: a payout can never exceed its own stream's remaining deposit
+
+```gherkin
+Given two streams, A and B, funded by different senders into the same contract
+And the contract's token balance is the pooled sum of both deposits
+When any withdraw() or cancel() computes a payout for stream A
+Then the payout is asserted to be <= A.total - A.withdrawn before any transfer is made
+And a payout that would exceed it is rejected rather than silently drawing on B's deposit
+And note that the deposit == withdrawn + refunded + remaining_in_contract invariant would NOT
+    catch this on its own — it is a closure check across the whole contract and balances either way
 ```
 
 ---

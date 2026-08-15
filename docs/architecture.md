@@ -18,11 +18,11 @@ Responsibilities:
 - Compute claimable balance on read, from ledger time.
 - Withdraw: pay the recipient what the formula allows, update the withdrawn counter.
 - Milestones: let a named approver mark a tranche met, which unlocks it.
-- Cancel: freeze accrual, leave the recipient's earned balance withdrawable, return the remainder to the sender.
+- Cancel: freeze accrual, leave the recipient's earned balance withdrawable, return the remainder to the sender. Authorized by the sender alone on a cancelable stream, by sender *and* recipient together on a non-cancelable one.
 
 Non-responsibilities, deliberately: no dispute resolution, no identity, no asset issuance, no fee-on-transfer logic, no scheduling. If a feature can live off-chain or in an escrow contract, it does.
 
-<!-- TODO(maintainer): decide whether Core is one contract or split (streams + registry). Splitting costs a cross-contract call per withdrawal and eats into the read budget; keeping it monolithic makes upgrades coarser. Needs a decision before Phase 1. -->
+<!-- TODO(maintainer): decide whether Core is one contract or split (streams + registry). Splitting costs a cross-contract call per withdrawal and eats into the read budget. The "keeping it monolithic makes upgrades coarser" half of this trade-off is dead — open question 4 settled non-upgradeable, so there are no upgrades to be coarse. What's left is purely the read-budget argument, which points at monolithic. Needs a decision before Phase 1. -->
 
 ### 2. Indexer (off-chain) — planned
 
@@ -179,7 +179,11 @@ What it costs, and what the contract must not assume:
 
 ### Authorization
 
-Every privileged entry point calls `require_auth` on the address that should be authorizing it — sender for `create_stream` and `cancel`, recipient for `withdraw`, approver for `approve_milestone`. Roles are stored per stream; there is no global admin over user funds. This also means an approver can be a contract address, which is how a Trustless Work escrow can act as the approver for a milestone.
+Every privileged entry point calls `require_auth` on the address that should be authorizing it — sender for `create_stream`, recipient for `withdraw`, approver for `approve_milestone`. Roles are stored per stream. This also means an approver can be a contract address, which is how a Trustless Work escrow can act as the approver for a milestone.
+
+`cancel` is the one entry point whose authorization depends on the stream: with `cancelable = true` the sender alone authorizes; with `cancelable = false` **both the sender and the recipient must authorize**, which is the only way funds move on a stream the sender cannot stop unilaterally. Settlement is identical either way — [cancellation rules 1–4](concepts.md#cancellation-and-clawback) are unchanged. This exists so that a non-cancelable stream is not a permanent dead end when the contract needs migrating or an approver never returns; see [research/upgradeability-and-pause.md](research/upgradeability-and-pause.md#the-fix-cancel-by-unanimous-consent).
+
+**On global roles.** There is no admin with any power over funds in an existing stream — no upgrade key (the contract is non-upgradeable, per [open question 4](#open-questions)), no ability to move, redirect, freeze, or reassign a stream. One global role exists: the **pauser**, whose single power is to stop `create_stream`, and which auto-expires and can be renounced. It cannot touch a stream that already exists. Every payout additionally asserts `payout <= total - withdrawn` for that stream, so no stream's lifetime extraction can reach a neighbour's deposit out of the contract's pooled balance.
 
 ## Trustless Work integration
 
@@ -196,12 +200,13 @@ Answers wanted. These are good places to argue with the design — open an issue
 1. **Stream IDs.** Monotonic `u64` counter, or a hash of the creation parameters? A counter needs a writable global entry on every creation, which is a write-contention point. A hash is contention-free but unfriendly to read.
 2. ~~**Milestone revocation.**~~ **Settled: no.** Milestone state is monotonic and `Met` is terminal. Re-locking a tranche after a withdrawal has settled would charge the shortfall against the recipient's *other* tranches, because `withdrawn` is one stream-wide counter — worked through in [research/milestone-revocation.md](research/milestone-revocation.md). Storage consequence recorded under [Storage type and TTL](#storage-type-and-ttl).
 3. **Multiple recipients per stream.** Splitting a stream N ways is a real payroll need, but it multiplies the per-transaction entry cost. Probably out of scope for v1 — argue otherwise if you disagree.
-4. **Upgradeability.** Soroban contracts can upgrade their own Wasm. For a custody contract, who holds that key, and is it worth the trust cost? A non-upgradeable contract with a documented migration path may be the better answer.
-5. **Pausing.** Is there an emergency stop, and if so, can it stop *withdrawals*? An emergency stop that can freeze a recipient's earned funds is a rug vector with good intentions.
+4. ~~**Upgradeability.**~~ **Settled: non-upgradeable.** The contract has no upgrade function, so there is no upgrade key to hold, compromise, or be coerced into using. The timelocked-upgrade alternative was rejected on arithmetic rather than principle: a timelock only protects what a user can withdraw during it, and a stream's whole purpose is that most of the money isn't withdrawable yet — a 30-day timelock rescues 2.1% of a four-year vest if the attacker announces early. Worked through in [research/upgradeability-and-pause.md](research/upgradeability-and-pause.md).
+5. ~~**Pausing.**~~ **Settled: `create_stream` only.** `withdraw`, `cancel`, `approve_milestone`, and TTL extension are never pausable, so a pause can never reach a stream that already exists. The pause auto-expires after 30 days and can be renounced permanently — both because a non-upgradeable contract can never correct a stuck one. The strongest case for pausing withdrawals (the contract's token balance is pooled, so an accrual bug could let one stream drain another's deposit) is answered by a per-stream solvency assertion instead — same file.
 
 ## Next
 
 - [glossary.md](glossary.md) — definitions for the vocabulary on this page.
-- [specs/behaviour.md](specs/behaviour.md) — Given/When/Then scenarios for the four entry points, including the cases this page's open questions leave undecided.
+- [specs/behaviour.md](specs/behaviour.md) — Given/When/Then scenarios for the four entry points, plus the pause's scope and the per-stream solvency assertion.
+- [research/upgradeability-and-pause.md](research/upgradeability-and-pause.md) — why open questions 4 and 5 were settled by removing capabilities rather than guarding them.
 - [../ROADMAP.md](../ROADMAP.md) — build order.
 - [../CONTRIBUTING.md](../CONTRIBUTING.md) — how to pick something up.
