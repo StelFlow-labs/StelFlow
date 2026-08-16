@@ -100,3 +100,9 @@ test_snapshots/
 # `pnpm bindings`; committing them would let the checked-in copy drift from the
 # Wasm actually on chain.
 packages/stelflow-sdk/
+
+# Next.js
+.next/
+next-env.d.ts
+apps/web/AGENTS.md
+apps/web/CLAUDE.md

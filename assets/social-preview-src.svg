@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <title>StelFlow — payment streaming with milestone gates, on Stellar</title>
+  <!--
+    Source for social-preview.png (exactly 1280×640, as GitHub's social preview
+    wants). Unlike logo.svg and banner.svg this one commits to a single dark
+    ground: a social card is composited onto whatever Slack, Discord or a
+    timeline puts behind it, so `currentColor` has nothing sensible to inherit.
+
+    Colours are the app's own tokens in dark mode — the same three validated
+    categorical slots the deposit meter uses — so the card and the product read
+    as one thing.
+
+    Export:  rsvg-convert -w 1280 -h 640 assets/social-preview-src.svg \
+               -o assets/social-preview.png
+  -->
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#161615" />
+      <stop offset="1" stop-color="#0d0d0c" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#ground)" />
+
+  <!-- Mark -->
+  <g transform="translate(96 96) scale(1.5)" fill="none" stroke="#ffffff"
+     stroke-width="6" stroke-linecap="round">
+    <path d="M10 18 H54" opacity="0.9" />
+    <path d="M10 32 H26" />
+    <path d="M42 32 H54" opacity="0.35" />
+    <path d="M10 46 H54" opacity="0.9" />
+    <path d="M34 22 V42" />
+  </g>
+
+  <text x="96" y="300"
+        font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif"
+        font-size="92" font-weight="600" letter-spacing="-2" fill="#ffffff">StelFlow</text>
+
+  <text x="96" y="360"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="30" fill="#c3c2b7">payment streaming with milestone gates, on Stellar</text>
+
+  <!--
+    A deposit meter at card scale, using the real series colours: withdrawn,
+    claimable, held, then the unstreamed remainder as track. Same 2px gaps as
+    the component.
+  -->
+  <g transform="translate(96 440)">
+    <rect x="0" y="0" width="330" height="14" rx="7" fill="#3987e5" />
+    <rect x="334" y="0" width="222" height="14" fill="#199e70" />
+    <rect x="560" y="0" width="180" height="14" fill="#9085e9" />
+    <rect x="744" y="0" width="344" height="14" rx="7" fill="#2e2e2b" />
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+     font-size="21" fill="#8d8b81">
+    <circle cx="102" cy="497" r="5" fill="#3987e5" />
+    <text x="118" y="504">withdrawn</text>
+    <circle cx="270" cy="497" r="5" fill="#199e70" />
+    <text x="286" y="504">claimable</text>
+    <circle cx="434" cy="497" r="5" fill="#9085e9" />
+    <text x="450" y="504">held</text>
+    <circle cx="530" cy="497" r="5" fill="#2e2e2b" />
+    <text x="546" y="504">unstreamed</text>
+  </g>
+
+  <text x="96" y="576"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="21" fill="#6f6d65">testnet · non-upgradeable · unaudited</text>
+</svg>

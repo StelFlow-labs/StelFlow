@@ -1,9 +1,16 @@
 {
   "name": "stelflow",
   "private": true,
-  "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0",
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "docs:lint": "markdownlint-cli2 \"**/*.md\""
+    "dev": "pnpm --filter @stelflow/web dev",
+    "build": "pnpm --filter @stelflow/web build",
+    "lint": "pnpm --filter @stelflow/web lint",
+    "typecheck": "pnpm --filter @stelflow/web typecheck",
+    "docs:lint": "markdownlint-cli2 \"**/*.md\"",
+    "contract:test": "cargo test --target aarch64-apple-darwin",
+    "contract:build": "stellar contract build",
+    "bindings": "stellar contract bindings typescript --network testnet --contract-id $(node -p \"require('./deployments.json').testnet.contractId\") --output-dir packages/stelflow-sdk --overwrite"
   },
   "devDependencies": {
     "markdownlint-cli2": "0.23.2"
