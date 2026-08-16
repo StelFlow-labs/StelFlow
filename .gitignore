@@ -33,9 +33,15 @@ node_modules/
 dist/
 build/
 out/
-lib/
 *.tsbuildinfo
 .eslintcache
+
+# `lib/` was listed above as a build-output directory. It silently swallowed
+# apps/web/lib/ — the app's entire source tree — and nothing local noticed,
+# because the files were on disk. Only CI type-checking a clean checkout caught
+# it. Removed rather than negated: nothing in this repo emits to lib/, and a
+# rule that hides source is far worse than an unignored directory that never
+# gets created.
 
 # Generated contract bindings — regenerated from the contract spec in CI,
 # so a stale checked-in copy is worse than none.
