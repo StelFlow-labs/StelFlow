@@ -10,58 +10,64 @@ Where StelFlow is going and in what order. Phases are sequenced by dependency, n
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | Design and docs | 🟡 In progress |
-| 1 | Contract core | ⚪ Not started |
-| 2 | Milestones and cancellation | ⚪ Not started |
-| 3 | Indexer | ⚪ Not started |
-| 4 | TypeScript SDK | ⚪ Not started |
-| 5 | Dashboard | ⚪ Not started |
-| 6 | Trustless Work integration | ⚪ Not started |
-| 7 | Hardening and audit | ⚪ Not started |
+| 0 | Design and docs | 🟢 Done |
+| 1 | Contract core | 🟢 Done — on testnet |
+| 2 | Milestones and cancellation | 🟢 Done — on testnet |
+| 3 | Indexer | ⚪ Not started — the dashboard reads RPC directly for now |
+| 4 | TypeScript SDK | 🟡 Bindings generated; the convenience layer above them is not built |
+| 5 | Dashboard | 🟢 Done — every entry point is driveable |
+| 6 | Trustless Work integration | ⚪ Not started, and not yet discussed with them |
+| 7 | Hardening and audit | ⚪ Not started — **the gate before mainnet** |
 | 8 | Mainnet | ⚪ Not started |
+
+Phases 3 and 4 were skipped rather than completed. The dashboard folds RPC's
+event log directly, which works at this scale and is honest about its limit: RPC
+retains a rolling window, so the activity feed shows recent activity rather than
+full history. [indexer-design.md](indexer-design.md) specifies the service for
+when that stops being enough.
 
 ---
 
-## Phase 0 — Design and docs 🟡
+## Phase 0 — Design and docs 🟢
 
-The current phase. Get the design written down well enough that someone can disagree with it specifically.
+Get the design written down well enough that someone can disagree with it specifically.
 
 - [x] README, concepts, architecture
 - [x] Contribution setup — templates, code of conduct, security policy
-- [ ] Resolve the open questions in [docs/architecture.md](architecture.md#open-questions): ~~milestone revocation~~ (done, #17), ~~upgradeability~~ and ~~pausing~~ (done, #33), stream IDs and multiple recipients still open
-- [ ] Write the contract interface as a Rust trait with no implementation, and review it as a PR before anything is built behind it
-- [ ] Decide the workspace layout (contract crates, SDK package, dashboard app, indexer service)
+- [x] Resolve the open questions in [docs/architecture.md](architecture.md#open-questions): milestone revocation (#17), upgradeability and pausing (#33), milestone deadlines (#38), and stream IDs (a monotonic counter, settled by implementing it). Multiple recipients per stream stays deliberately out of scope for v1.
+- [x] ~~Write the contract interface as a Rust trait with no implementation~~ — superseded. [behaviour.md](behaviour.md) turned out to be the better artefact for the same purpose: it pinned the semantics before any code existed, and became the test suite directly.
+- [x] Decide the workspace layout — Cargo workspace under `contracts/`, pnpm workspace over `apps/` and `packages/`
 
 **Done when:** the interface is agreed and the open questions have answers in the docs, not in someone's head.
 
-## Phase 1 — Contract core ⚪
+## Phase 1 — Contract core 🟢
 
 The minimum thing that is genuinely a payment stream: linear accrual against ledger time, with withdrawal.
 
-- [ ] Cargo workspace, `soroban-sdk`, CI building to `wasm32v1-none`
-- [ ] Stream storage — one `persistent` entry per stream, `instance` storage for config
-- [ ] `create_stream` — full deposit pulled up front via SEP-41 `transfer_from`
-- [ ] Claimable-balance math in `i128`, multiply-before-divide, round down, end-of-stream settles to the exact remainder
-- [ ] `withdraw` — "withdraw what's available," not a fixed amount
-- [ ] Cliff support
-- [ ] TTL extension on every state-changing call, plus a public `bump_stream`
-- [ ] Events for every state change, designed for the indexer before the indexer exists
-- [ ] Unit tests against a mocked ledger clock, including: withdrawing twice in one ledger, withdrawing at exactly `start` and exactly `end`, a stream of duration 1, and a stream whose total doesn't divide evenly by its duration — [docs/specs/behaviour.md](behaviour.md) has these written out as Given/When/Then scenarios already, use it as the checklist
-- [ ] Measure real footprint sizes and set `MAX_MILESTONES_PER_STREAM` and `MAX_BATCH_SIZE` from measurement
+- [x] Cargo workspace, `soroban-sdk`, CI building to `wasm32v1-none`
+- [x] Stream storage — one `persistent` entry per stream, `instance` storage for config
+- [x] `create_stream` — full deposit pulled up front via SEP-41 `transfer_from`
+- [x] Claimable-balance math in `i128`, multiply-before-divide, round down, end-of-stream settles to the exact remainder
+- [x] `withdraw` — "withdraw what's available," not a fixed amount
+- [x] Cliff support
+- [x] TTL extension on every state-changing call, plus a public `bump_stream`
+- [x] Events for every state change, designed for the indexer before the indexer exists
+- [x] Unit tests against a mocked ledger clock, including: withdrawing twice in one ledger, withdrawing at exactly `start` and exactly `end`, a stream of duration 1, and a stream whose total doesn't divide evenly by its duration — [docs/specs/behaviour.md](behaviour.md) has these written out as Given/When/Then scenarios already, use it as the checklist
+- [x] Measure real footprint sizes and set `MAX_MILESTONES_PER_STREAM` and `MAX_BATCH_SIZE` from measurement
 
 **Done when:** a stream can be created and fully withdrawn on testnet, and the sum of withdrawals equals the deposit exactly, with no dust stranded.
 
-## Phase 2 — Milestones and cancellation ⚪
+## Phase 2 — Milestones and cancellation 🟢
 
 What makes this StelFlow rather than a Sablier port.
 
-- [ ] Milestone struct stored inline in the stream entry, capped in count
-- [ ] `approve_milestone`, authorized against a per-milestone approver address
-- [ ] Gated claimable math — locked tranches accrue but don't pay out; approval releases accrued-to-date immediately
-- [ ] Cancelable flag, set at creation and immutable after
-- [ ] `cancel` — freeze accrual, recipient keeps earned, sender recovers unstreamed and unapproved tranches
-- [ ] Milestone revocation, or an explicit documented decision not to support it
-- [ ] Tests for the ugly cases: cancel with a pending approval in flight, approval after the end time, approval of a milestone on a canceled stream, cancel with zero elapsed time
+- [x] Milestone struct stored inline in the stream entry, capped in count
+- [x] `approve_milestone`, authorized against a per-milestone approver address
+- [x] Gated claimable math — locked tranches accrue but don't pay out; approval releases accrued-to-date immediately
+- [x] Cancelable flag, set at creation and immutable after
+- [x] `cancel` — freeze accrual, recipient keeps earned, sender recovers unstreamed and unapproved tranches
+- [x] Milestone revocation, or an explicit documented decision not to support it
+- [x] Tests for the ugly cases: cancel with a pending approval in flight, approval after the end time, approval of a milestone on a canceled stream, cancel with zero elapsed time
 
 **Done when:** the grant scenario in [docs/concepts.md](concepts.md#milestone-gates) runs end-to-end on testnet, including a cancellation partway through.
 
@@ -90,17 +96,29 @@ Contract events into queryable history.
 
 **Done when:** a developer can create, monitor, and withdraw a stream without reading the contract source.
 
-## Phase 5 — Dashboard ⚪
+## Phase 5 — Dashboard 🟢
 
-- [ ] Wallet connection
-- [ ] Sender view — create streams, watch outflow, cancel
-- [ ] Recipient view — live accrual, withdraw, milestone status
-- [ ] Approver view — pending milestones, approve
-- [ ] Clawback warning when a stream's asset has issuer clawback enabled
-- [ ] Degraded mode — current claimable balance still works with the indexer down
+Built earlier than the roadmap's order implies, because a contract nobody can
+drive is hard to evaluate. Phases 3 and 4 were skipped rather than done.
+
+- [x] Wallet connection — Stellar Wallets Kit, browser-extension wallets only
+- [x] Sender view — create streams, watch outflow, cancel
+- [x] Recipient view — live accrual, withdraw, milestone status
+- [x] Approver view — pending milestones, approve
+- [x] Degraded mode — claimable comes from simulating a contract read, so it
+      works with no indexer at all, which is the state it currently runs in
+- [ ] Clawback warning when a stream's asset has issuer clawback enabled — the
+      disclosure [T6 and T7](threat-model.md#t7--issuer-clawback) say the
+      acceptance depends on. **Not built, and the accepted risk is not honest
+      until it is.**
 - [ ] Streams created from a CSV, for payroll runs
 
+Roles are not separate views: the interface shows the actions your connected
+address is actually entitled to on each stream, which turned out to be simpler
+and to remove the "which view am I meant to be in" question entirely.
+
 **Done when:** someone who has never used a CLI can receive a grant through it.
+Not yet — the clawback warning is the gap.
 
 ## Phase 6 — Trustless Work integration ⚪
 
