@@ -1,0 +1,62 @@
+# Contract CI.
+#
+# The contract is non-upgradeable: a bug that reaches mainnet cannot be patched
+# out. That makes this pipeline the last place a regression can be caught
+# cheaply, so it gates on formatting, lints, tests, and a real Wasm build rather
+# than just "cargo test".
+name: contract
+
+on:
+  push:
+    branches: [main]
+    paths: ["contracts/**", "Cargo.toml", "Cargo.lock", ".github/workflows/contract.yml"]
+  pull_request:
+    paths: ["contracts/**", "Cargo.toml", "Cargo.lock", ".github/workflows/contract.yml"]
+
+env:
+  CARGO_TERM_COLOR: always
+  # Soroban rejects wasm32-unknown-unknown on Rust 1.82+ — that target enables
+  # reference-types and multi-value, which the host does not support.
+  WASM_TARGET: wasm32v1-none
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup target add "$WASM_TARGET"
+
+      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2.8.0
+
+      - name: Formatting
+        run: cargo fmt --all --check
+
+      # Tests run on the host: the testutils feature does not build for wasm.
+      - name: Tests
+        run: cargo test --target x86_64-unknown-linux-gnu --all-features
+
+      - name: Clippy (host, all targets)
+        run: cargo clippy --target x86_64-unknown-linux-gnu --all-targets -- -D warnings
+
+      - name: Clippy (wasm lib)
+        run: cargo clippy --target "$WASM_TARGET" --release --lib -- -D warnings
+
+      - name: Build Wasm
+        run: cargo build --target "$WASM_TARGET" --release
+
+      # A contract too large to deploy is a failure worth catching here rather
+      # than at deploy time. The ceiling is generous; the check exists to make an
+      # unexpected jump visible in the diff that caused it.
+      - name: Report Wasm size
+        run: |
+          size=$(stat -c%s target/"$WASM_TARGET"/release/stelflow.wasm)
+          echo "stelflow.wasm: $size bytes"
+          echo "### Contract size: \`$size\` bytes" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$size" -gt 200000 ]; then
+            echo "::error::Wasm exceeded 200 KB — investigate before merging."
+            exit 1
+          fi
