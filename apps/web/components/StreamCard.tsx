@@ -3,12 +3,7 @@
 import { useMemo, useState } from "react";
 
 import type { StreamView } from "@/lib/contract";
-import {
-  absoluteTime,
-  formatAmount,
-  relativeTime,
-  shortAddress,
-} from "@/lib/format";
+import { absoluteTime, formatAmount, relativeTime, shortAddress } from "@/lib/format";
 import {
   MILESTONE_MET,
   ON_EXPIRY_TO_RECIPIENT,
@@ -18,93 +13,89 @@ import {
   settlementAt,
   type Phase,
 } from "@/lib/stream";
-import { cn } from "@/lib/cn";
 import { DepositMeter } from "./DepositMeter";
 import { Badge, Button, Card, Stat, type BadgeTone } from "./ui";
 
-const PHASE_LABEL: Record<Phase, { text: string; tone: BadgeTone }> = {
-  pending: { text: "Not started", tone: "neutral" },
-  cliff: { text: "In cliff", tone: "warning" },
-  streaming: { text: "Streaming", tone: "good" },
-  completed: { text: "Completed", tone: "neutral" },
-  canceled: { text: "Cancelled", tone: "critical" },
+const PHASE: Record<Phase, { label: string; tone: BadgeTone }> = {
+  pending: { label: "Starts soon", tone: "neutral" },
+  cliff: { label: "In its cliff", tone: "warn" },
+  streaming: { label: "Flowing", tone: "good" },
+  completed: { label: "Finished", tone: "neutral" },
+  canceled: { label: "Cancelled", tone: "bad" },
 };
-
-export type Role = "sender" | "recipient" | "approver" | "observer";
 
 export function StreamCard({
   view,
   now,
   address,
+  busy,
   onWithdraw,
   onApprove,
   onCancel,
-  busy,
 }: {
   view: StreamView;
   now: bigint;
   address: string | null;
+  busy: string | null;
   onWithdraw: (id: bigint) => void;
   onApprove: (id: bigint, index: number) => void;
   onCancel: (id: bigint) => void;
-  busy: string | null;
 }) {
   const { stream } = view;
-  const [expanded, setExpanded] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  // Recomputed every tick from the same formula the contract uses, so the figure
-  // rises second by second without an RPC call per second.
   const position = useMemo(() => positionAt(stream, now), [stream, now]);
   const phase = phaseOf(stream, now);
-  const badge = PHASE_LABEL[phase];
+  const live = stream.canceled_at === undefined;
 
   const isSender = address === stream.sender;
   const isRecipient = address === stream.recipient;
-  const approverIndexes = stream.milestones
+  const pendingApprovals = stream.milestones
     .map((milestone, index) => ({ milestone, index }))
-    .filter(({ milestone }) => milestone.approver === address);
+    .filter(
+      ({ milestone }) =>
+        milestone.approver === address && milestone.state !== MILESTONE_MET,
+    );
 
-  const live = stream.canceled_at === undefined;
-  const busyKey = busy?.startsWith(`${stream.id}:`) ? busy : null;
+  const busyIs = (key: string) => busy === `${stream.id}:${key}`;
 
   return (
     <Card as="li" className="overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
-        <div className="flex items-center gap-2.5">
-          <span className="tnum text-xs text-ink-muted">#{stream.id.toString()}</span>
-          <Badge tone={badge.tone}>{badge.text}</Badge>
-          {!stream.cancelable ? (
-            <Badge tone="neutral" title="Both parties must agree to cancel">
-              Non-cancelable
-            </Badge>
-          ) : null}
-          {position.held > 0n ? (
-            <Badge tone="held">
-              {stream.milestones.filter(
-                (m) => resolveMilestone(m, now) === "withheld",
-              ).length}{" "}
-              gate(s) shut
-            </Badge>
-          ) : null}
-        </div>
-        <RoleTag isSender={isSender} isRecipient={isRecipient} />
+      <div className="flex flex-wrap items-center gap-2.5 px-5 pt-4">
+        <span className="tnum text-xs text-ink-3">#{stream.id.toString()}</span>
+        <Badge tone={PHASE[phase].tone}>{PHASE[phase].label}</Badge>
+        {!stream.cancelable ? (
+          <Badge tone="neutral" title="Ending it early needs both signatures">
+            Needs both to cancel
+          </Badge>
+        ) : null}
+        {position.held > 0n ? (
+          <Badge tone="held">Waiting on a sign-off</Badge>
+        ) : null}
+        {isSender || isRecipient ? (
+          <span className="ml-auto text-[11px] text-ink-3">
+            {isSender ? "You are paying this" : "This is paying you"}
+          </span>
+        ) : null}
       </div>
 
       <div className="grid gap-5 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
-            <span className="tnum text-2xl font-medium text-ink tabular-nums">
+            <span className="tnum text-3xl font-semibold text-ink">
               {formatAmount(position.claimable, { maxDecimals: 5 })}
             </span>
-            <span className="text-xs text-ink-muted">claimable now</span>
+            <span className="text-sm text-ink-3">XLM ready</span>
           </div>
-          <p className="mt-1 text-xs text-ink-muted">
-            of {formatAmount(stream.total, { maxDecimals: 2 })} deposited ·{" "}
+          <p className="mt-1.5 text-xs text-ink-3">
+            out of {formatAmount(stream.total, { maxDecimals: 2 })} ·{" "}
             {phase === "pending"
-              ? `starts ${relativeTime(stream.start, now)}`
-              : phase === "completed" || phase === "canceled"
-                ? `ended ${relativeTime(stream.end, now)}`
-                : `ends ${relativeTime(stream.end, now)}`}
+              ? `begins ${relativeTime(stream.start, now)}`
+              : phase === "canceled"
+                ? `stopped ${relativeTime(stream.canceled_at ?? stream.end, now)}`
+                : phase === "completed"
+                  ? `finished ${relativeTime(stream.end, now)}`
+                  : `runs out ${relativeTime(stream.end, now)}`}
           </p>
         </div>
 
@@ -112,63 +103,46 @@ export function StreamCard({
           {isRecipient && live && position.claimable > 0n ? (
             <Button
               variant="primary"
-              busy={busyKey === `${stream.id}:withdraw`}
+              size="sm"
+              busy={busyIs("withdraw")}
               onClick={() => onWithdraw(stream.id)}
             >
               Withdraw
             </Button>
           ) : null}
-          {approverIndexes
-            .filter(({ milestone }) => milestone.state !== MILESTONE_MET)
-            .slice(0, 1)
-            .map(({ index }) => (
-              <Button
-                key={index}
-                variant="secondary"
-                busy={busyKey === `${stream.id}:approve:${index}`}
-                onClick={() => onApprove(stream.id, index)}
-              >
-                Approve milestone
-              </Button>
-            ))}
+          {pendingApprovals.slice(0, 1).map(({ index }) => (
+            <Button
+              key={index}
+              variant="secondary"
+              size="sm"
+              busy={busyIs(`approve:${index}`)}
+              onClick={() => onApprove(stream.id, index)}
+            >
+              Sign off milestone
+            </Button>
+          ))}
           {isSender && live ? (
             <Button
               variant="danger"
-              busy={busyKey === `${stream.id}:cancel`}
+              size="sm"
+              busy={busyIs("cancel")}
               onClick={() => onCancel(stream.id)}
             >
-              Cancel
+              End it
             </Button>
           ) : null}
-          <Button variant="ghost" onClick={() => setExpanded((open) => !open)}>
-            {expanded ? "Less" : "Details"}
+          <Button variant="ghost" size="sm" onClick={() => setOpen((v) => !v)}>
+            {open ? "Less" : "Details"}
           </Button>
         </div>
       </div>
 
-      <div className="px-5 pb-4">
+      <div className="px-5 pb-5">
         <DepositMeter stream={stream} position={position} />
       </div>
 
-      {expanded ? (
-        <Details view={view} now={now} position={position} />
-      ) : null}
+      {open ? <Details view={view} now={now} position={position} /> : null}
     </Card>
-  );
-}
-
-function RoleTag({
-  isSender,
-  isRecipient,
-}: {
-  isSender: boolean;
-  isRecipient: boolean;
-}) {
-  if (!isSender && !isRecipient) return null;
-  return (
-    <span className="text-[11px] text-ink-muted">
-      You are the {isSender ? "sender" : "recipient"}
-    </span>
   );
 }
 
@@ -185,98 +159,84 @@ function Details({
   const settlement = settlementAt(stream, now);
 
   return (
-    <div className="border-t border-edge bg-surface-0/60 px-5 py-4">
+    <div className="border-t border-edge bg-surface-0/60 px-5 py-5">
       <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+        <Stat label="Earned so far" value={formatAmount(position.streamedTotal, { maxDecimals: 4 })} />
         <Stat
-          label="Streamed"
-          value={formatAmount(position.streamedTotal, { maxDecimals: 4 })}
-        />
-        <Stat
-          label="Withdrawn"
-          swatch="var(--series-withdrawn)"
+          label="Already taken"
+          swatch="var(--withdrawn)"
           value={formatAmount(stream.withdrawn, { maxDecimals: 4 })}
         />
         <Stat
-          label="Claimable"
-          swatch="var(--series-claimable)"
+          label="Ready now"
+          swatch="var(--claimable)"
           value={formatAmount(position.claimable, { maxDecimals: 4 })}
         />
         <Stat
-          label="Held"
-          swatch="var(--series-held)"
+          label="Held back"
+          swatch="var(--held)"
           value={formatAmount(position.held, { maxDecimals: 4 })}
-          detail={position.held > 0n ? "behind a shut gate" : undefined}
+          detail={position.held > 0n ? "waiting on a sign-off" : undefined}
         />
       </div>
 
-      <dl className="mt-5 grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
-        <Row label="Sender" value={shortAddress(stream.sender, 6, 6)} mono />
-        <Row label="Recipient" value={shortAddress(stream.recipient, 6, 6)} mono />
-        <Row label="Starts" value={absoluteTime(stream.start)} />
+      <dl className="mt-5 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
+        <Row label="Paid by" value={shortAddress(stream.sender, 6, 6)} mono />
+        <Row label="Paid to" value={shortAddress(stream.recipient, 6, 6)} mono />
+        <Row label="Started" value={absoluteTime(stream.start)} />
         <Row label="Ends" value={absoluteTime(stream.end)} />
         {stream.cliff > stream.start ? (
           <Row
-            label="Cliff"
+            label="Nothing claimable until"
             value={`${absoluteTime(stream.cliff)} (${relativeTime(stream.cliff, now)})`}
           />
         ) : null}
         {stream.canceled_at !== undefined ? (
-          <Row label="Cancelled" value={absoluteTime(stream.canceled_at)} />
+          <Row label="Stopped" value={absoluteTime(stream.canceled_at)} />
         ) : (
           <Row
-            label="If cancelled now"
-            value={`${formatAmount(settlement.refund, { maxDecimals: 2 })} back to sender`}
+            label="If it ended now"
+            value={`${formatAmount(settlement.refund, { maxDecimals: 2 })} back to the sender`}
           />
         )}
       </dl>
 
       {stream.milestones.length > 0 ? (
-        <div className="mt-5">
-          <h3 className="text-xs font-medium text-ink-secondary">Milestones</h3>
-          <ul className="mt-2 space-y-2">
+        <div className="mt-6">
+          <h3 className="text-xs font-medium text-ink-2">Milestones</h3>
+          <ul className="mt-2.5 space-y-2">
             {stream.milestones.map((milestone, index) => {
               const resolution = resolveMilestone(milestone, now);
-              const expiring = milestone.deadline !== 0n;
+              const tone: BadgeTone =
+                resolution === "released" ? "good" : resolution === "returned" ? "bad" : "held";
+              const label =
+                resolution === "released"
+                  ? milestone.state === MILESTONE_MET
+                    ? "Signed off"
+                    : "Released by its deadline"
+                  : resolution === "returned"
+                    ? "Went back to the sender"
+                    : "Waiting for a sign-off";
+
               return (
                 <li
                   key={index}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-edge bg-surface-1 px-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-edge bg-surface-1 px-3.5 py-2.5"
                 >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="tnum text-xs text-ink-muted">{index}</span>
+                  <div className="flex min-w-0 items-center gap-2.5">
                     <span className="tnum text-sm text-ink">
                       {formatAmount(milestone.amount, { maxDecimals: 2 })}
                     </span>
-                    <Badge
-                      tone={
-                        resolution === "released"
-                          ? "good"
-                          : resolution === "returned"
-                            ? "critical"
-                            : "held"
-                      }
-                    >
-                      {resolution === "released"
-                        ? milestone.state === MILESTONE_MET
-                          ? "Approved"
-                          : "Released by deadline"
-                        : resolution === "returned"
-                          ? "Returned to sender"
-                          : "Awaiting approval"}
-                    </Badge>
+                    <Badge tone={tone}>{label}</Badge>
                   </div>
-                  <div className="flex items-center gap-3 text-[11px] text-ink-muted">
-                    <span className="tnum">
-                      approver {shortAddress(milestone.approver)}
-                    </span>
-                    {expiring ? (
+                  <div className="flex items-center gap-3 text-[11px] text-ink-3">
+                    <span className="tnum">signed by {shortAddress(milestone.approver)}</span>
+                    {milestone.deadline !== 0n ? (
                       <span
-                        className={cn(
-                          resolution === "withheld" && "text-[var(--status-warning)]",
-                        )}
+                        className={resolution === "withheld" ? "text-warn" : undefined}
                         title={absoluteTime(milestone.deadline)}
                       >
-                        {resolution === "withheld" ? "resolves " : "deadline "}
+                        {resolution === "withheld" ? "decides " : "deadline "}
                         {relativeTime(milestone.deadline, now)} →{" "}
                         {milestone.on_expiry === ON_EXPIRY_TO_RECIPIENT
                           ? "recipient"
@@ -296,19 +256,11 @@ function Details({
   );
 }
 
-function Row({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
+function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-edge/60 py-1 last:border-0">
-      <dt className="text-ink-muted">{label}</dt>
-      <dd className={cn("text-ink-secondary", mono && "tnum")}>{value}</dd>
+    <div className="flex items-baseline justify-between gap-3 border-b border-edge/60 py-1.5 last:border-0">
+      <dt className="text-ink-3">{label}</dt>
+      <dd className={mono ? "tnum text-ink-2" : "text-ink-2"}>{value}</dd>
     </div>
   );
 }

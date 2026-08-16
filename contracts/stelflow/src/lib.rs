@@ -20,63 +20,41 @@ pub use accrual::{Position, Resolution, Settlement};
 pub use error::Error;
 pub use types::{ConfigKey, DataKey, Milestone, MilestoneSpec, MilestoneState, OnExpiry, Stream};
 
-/// Ceiling on milestones per stream.
-///
-/// Milestones live inside the stream struct, so this bounds how much a single
-/// `withdraw` must deserialize. An unbounded vector here is a way to build a
-/// stream that can never be withdrawn from, because reading it would exceed the
-/// transaction's resource budget — threat-model T2, the highest-likelihood
-/// entry in the model precisely because it needs no attacker.
-///
-/// Ten is deliberately conservative against the measured cost of a loaded
-/// stream; see `docs/architecture.md#the-per-transaction-read-budget`. Raising it
-/// requires re-measuring, not re-arguing.
+/// Bounds how much a single `withdraw` must deserialize, since milestones live
+/// inside the stream struct. Raising it requires re-measuring, not re-arguing.
 pub const MAX_MILESTONES_PER_STREAM: u32 = 10;
 
-/// How long a pause lasts before lifting by itself.
-///
-/// A pause that outlived its key would be permanent in a non-upgradeable
-/// contract — a small power becoming an irreversible one through nothing but
-/// neglect. Renewal is a single transaction, so erring short is cheap and erring
-/// long is not.
+/// How long a pause lasts before lifting by itself. A pause that outlived its
+/// key would otherwise be permanent, since the contract cannot be upgraded.
 pub const PAUSE_DURATION_SECONDS: u64 = 30 * 24 * 60 * 60;
 
-/// A stream plus its position, so a dashboard gets everything in one call
-/// instead of one round trip per field.
+/// A stream plus its position, so a client gets everything in one call.
 #[contracttype]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StreamView {
     pub stream: Stream,
     pub position: Position,
-    /// The timestamp this view was evaluated at. A client animating accrual
+    /// The ledger timestamp this was evaluated at. A client animating accrual
     /// needs the contract's clock, not the browser's.
     pub as_of: u64,
 }
 
 /// Payment streaming with milestone gates.
 ///
-/// **This contract has no upgrade function, and that is the design.** Only a
-/// contract can replace its own Wasm, so an absent function is permanent
-/// immutability rather than a policy anyone has to enforce. The reasoning, and
-/// why a timelocked upgrade was rejected on arithmetic rather than principle, is
-/// in `docs/upgradeability-and-pause.md`.
-///
-/// The one global role is the pauser, and it reaches exactly one entry point.
+/// There is no upgrade function, deliberately: only a contract can replace its
+/// own Wasm, so an absent function is permanent immutability rather than a
+/// policy needing enforcement. The one global role is the pauser, and it
+/// reaches exactly one entry point. See `docs/upgradeability-and-pause.md`.
 #[contract]
 pub struct StelFlow;
 
 #[contractimpl]
 impl StelFlow {
-    /// Set the initial pauser, atomically with deployment.
+    /// Sets the initial pauser atomically with deployment.
     ///
-    /// A constructor rather than an `initialize` anyone can call, because the gap
-    /// between the two is a real hole in a contract that can never be upgraded:
-    /// whoever calls `initialize` first would hold the pauser role permanently,
-    /// with no way to correct it. Running inside the deploy transaction means the
-    /// window does not exist.
-    ///
-    /// Pass `None` to deploy with no pauser at all — privilege-free from the
-    /// contract's first ledger. There is deliberately no way to set one later.
+    /// A constructor rather than a callable `initialize`, because the gap
+    /// between deploy and init would let anyone claim the role permanently on a
+    /// contract that can never be upgraded. Pass `None` for no pauser at all.
     pub fn __constructor(env: Env, pauser: Option<Address>) {
         storage::set_pauser(&env, &pauser);
         storage::set_paused_until(&env, 0);
@@ -88,14 +66,12 @@ impl StelFlow {
     // Streams
     // -----------------------------------------------------------------------
 
-    /// Escrow a deposit and open a stream.
+    /// Escrows a deposit and opens a stream.
     ///
-    /// The stored `total` is the contract's **measured balance delta** across the
-    /// transfer, not `amount`. A fee-on-transfer token therefore produces a
-    /// stream sized to what actually arrived, and the value-conservation
-    /// invariant holds without trusting the token to behave. Rebasing assets
-    /// remain unsupported: no creation-time measurement can bind a balance that
-    /// moves afterwards.
+    /// The stored `total` is the contract's measured balance delta across the
+    /// transfer, not `amount`, so a fee-on-transfer token produces a stream
+    /// sized to what actually arrived. Rebasing assets stay unsupported: no
+    /// creation-time measurement can bind a balance that moves afterwards.
     #[allow(clippy::too_many_arguments)]
     pub fn create_stream(
         env: Env,
@@ -134,9 +110,8 @@ impl StelFlow {
             if spec.amount <= 0 {
                 return Err(Error::InvalidAmount);
             }
-            // A deadline before `end` would resolve a tranche while it was still
-            // accruing, making `streamed_total` non-monotonic and racing a
-            // legitimate approver against the clock. See docs/milestone-deadlines.md.
+            // A deadline before `end` would resolve a tranche still accruing,
+            // making `streamed_total` non-monotonic.
             if spec.deadline != 0 && spec.deadline < end {
                 return Err(Error::InvalidTimeRange);
             }
@@ -192,11 +167,10 @@ impl StelFlow {
         Ok(id)
     }
 
-    /// Pay the recipient everything the formula currently allows.
+    /// Pays the recipient everything the formula currently allows.
     ///
-    /// Never pausable. A pause that could block this would make an
-    /// already-earned balance freezable by a third party, which is
-    /// indistinguishable from a rug from where the recipient is standing.
+    /// Never pausable: a pause that could block this would make an already-earned
+    /// balance freezable by a third party.
     pub fn withdraw(env: Env, stream_id: u64) -> Result<i128, Error> {
         let mut stream = storage::load_stream(&env, stream_id)?;
         stream.recipient.require_auth();
@@ -207,10 +181,8 @@ impl StelFlow {
             return Err(Error::NothingToWithdraw);
         }
 
-        // The contract's token balance is pooled across every stream, so this is
-        // what stops one stream's accounting bug reaching another's deposit.
-        // Unreachable if the accrual maths is right, which is exactly why it is
-        // asserted rather than assumed. See docs/upgradeability-and-pause.md.
+        // The token balance is pooled across streams, so this is what stops one
+        // stream's accounting bug reaching another's deposit.
         if payout > stream.total - stream.withdrawn {
             return Err(Error::InsolventStream);
         }
@@ -233,14 +205,12 @@ impl StelFlow {
         Ok(payout)
     }
 
-    /// Open a milestone's gate, releasing everything it has held.
+    /// Opens a milestone's gate, releasing accrual that has already happened —
+    /// it never accelerates the schedule.
     ///
-    /// Approval unlocks accrual that has *already happened*; it never accelerates
-    /// the schedule. A second call on an already-met milestone is absorbed as a
-    /// no-op — a duplicate is overwhelmingly a retry after an uncertain outcome,
-    /// and `Met` is terminal so there is no state to protect. Authorization is
-    /// still checked first, and no second event fires, so an indexer's fold never
-    /// sees one approval twice.
+    /// A second call on an already-met milestone is a no-op, since a duplicate
+    /// is overwhelmingly a retry and `Met` is terminal. Authorization is still
+    /// checked first, and no second event fires.
     pub fn approve_milestone(env: Env, stream_id: u64, index: u32) -> Result<(), Error> {
         let mut stream = storage::load_stream(&env, stream_id)?;
         let mut milestone = stream
@@ -275,18 +245,12 @@ impl StelFlow {
         Ok(())
     }
 
-    /// Freeze accrual and settle.
+    /// Freezes accrual and settles both sides.
     ///
-    /// The recipient keeps every stroop that has streamed; only the unstreamed
-    /// remainder returns to the sender, along with the whole tranche of any
-    /// milestone that never opened.
-    ///
-    /// **`cancelable = false` means the sender cannot cancel *alone*, not that
-    /// nobody can.** With the recipient authorizing alongside the sender, a
-    /// non-cancelable stream settles under exactly these rules. That path exists
-    /// because this contract can never be upgraded: an unbreakable stream would
-    /// be unbreakable for the life of the contract, stranding both parties when
-    /// an approver vanishes or a migration is needed.
+    /// `cancelable = false` means the sender cannot cancel *alone*, not that
+    /// nobody can: with the recipient authorizing too, the same rules apply.
+    /// That path exists because the contract can never be upgraded, so an
+    /// otherwise unbreakable stream would strand both parties for its lifetime.
     pub fn cancel(env: Env, stream_id: u64) -> Result<Settlement, Error> {
         let mut stream = storage::load_stream(&env, stream_id)?;
 
@@ -305,9 +269,8 @@ impl StelFlow {
             return Err(Error::InsolventStream);
         }
 
-        // Freeze the clock, then resolve every still-shut gate. Marking them
-        // Forfeited rather than leaving them Unmet is what stops a cancelled
-        // stream's milestones from later "expiring" — they are already resolved.
+        // Marking shut gates Forfeited rather than leaving them Unmet is what
+        // stops a cancelled stream's milestones later "expiring".
         stream.canceled_at = Some(now);
         for index in 0..stream.milestones.len() {
             let mut milestone = stream.milestones.get(index).unwrap();
@@ -335,11 +298,8 @@ impl StelFlow {
         Ok(settlement)
     }
 
-    /// Extend a stream's TTL. Callable by anyone, deliberately.
-    ///
-    /// `ExtendFootprintTTLOp` has no auth check either, so gating this would buy
-    /// nothing but the illusion of control. It lets a sender, a grant
-    /// administrator, or a third-party keeper keep a dormant stream alive.
+    /// Extends a stream's TTL. Callable by anyone, so a sender or a third-party
+    /// keeper can keep a dormant stream alive.
     pub fn bump_stream(env: Env, stream_id: u64) -> Result<(), Error> {
         storage::bump_stream_ttl(&env, stream_id)
     }
@@ -352,7 +312,7 @@ impl StelFlow {
         storage::peek_stream(&env, stream_id)
     }
 
-    /// A stream and its current position, evaluated against the ledger clock.
+    /// A stream and its position, evaluated against the ledger clock.
     pub fn describe(env: Env, stream_id: u64) -> Result<StreamView, Error> {
         let stream = storage::peek_stream(&env, stream_id)?;
         let as_of = env.ledger().timestamp();
@@ -370,8 +330,8 @@ impl StelFlow {
         Ok(accrual::position(&stream, env.ledger().timestamp())?.claimable)
     }
 
-    /// How a cancellation would divide the deposit if it happened now. Lets a UI
-    /// show both parties the outcome before either of them signs.
+    /// How a cancellation would divide the deposit if it happened now, so both
+    /// parties can see the outcome before either signs.
     pub fn preview_cancel(env: Env, stream_id: u64) -> Result<Settlement, Error> {
         let stream = storage::peek_stream(&env, stream_id)?;
         accrual::settle(&stream, env.ledger().timestamp())
@@ -389,11 +349,8 @@ impl StelFlow {
     // Pause
     // -----------------------------------------------------------------------
 
-    /// Stop `create_stream` for [`PAUSE_DURATION_SECONDS`]. Renewable.
-    ///
-    /// This reaches exactly one entry point. It cannot touch a stream that
-    /// already exists, and no amount of pausing gives the pauser authority over
-    /// anyone's funds.
+    /// Stops `create_stream` for [`PAUSE_DURATION_SECONDS`]. Renewable, and it
+    /// cannot touch a stream that already exists.
     pub fn pause(env: Env) -> Result<u64, Error> {
         Self::require_pauser(&env)?;
         let until = env.ledger().timestamp() + PAUSE_DURATION_SECONDS;
@@ -415,7 +372,6 @@ impl StelFlow {
         Ok(())
     }
 
-    /// Hand the role to another address.
     pub fn transfer_pauser(env: Env, new_pauser: Address) -> Result<(), Error> {
         Self::require_pauser(&env)?;
         storage::set_pauser(&env, &Some(new_pauser.clone()));
@@ -426,12 +382,8 @@ impl StelFlow {
         Ok(())
     }
 
-    /// Give up the role permanently.
-    ///
-    /// Irreversible: there is no upgrade path that could restore it. This lets a
-    /// deployment reach a genuinely privilege-free state once the contract has
-    /// been in production long enough to trust — at the cost of discarding the
-    /// only incident response the design retains.
+    /// Gives up the role permanently — there is no upgrade path that could
+    /// restore it, and this discards the only incident response the design has.
     pub fn renounce_pauser(env: Env) -> Result<(), Error> {
         Self::require_pauser(&env)?;
         storage::set_pauser(&env, &None);
@@ -443,10 +395,7 @@ impl StelFlow {
         storage::pauser(&env)
     }
 
-    /// The timestamp an active pause lifts at. Zero means not paused.
-    ///
-    /// A client should compare this against the *ledger* clock rather than the
-    /// browser's, since that is what `create_stream` will check.
+    /// The timestamp an active pause lifts at, or zero if not paused.
     pub fn paused_until(env: Env) -> u64 {
         let until = storage::paused_until(&env);
         if until > env.ledger().timestamp() {

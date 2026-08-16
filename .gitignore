@@ -112,7 +112,3 @@ packages/stelflow-sdk/
 next-env.d.ts
 apps/web/AGENTS.md
 apps/web/CLAUDE.md
-
-# VitePress
-docs/.vitepress/dist/
-docs/.vitepress/cache/

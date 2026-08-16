@@ -107,10 +107,11 @@ drive is hard to evaluate. Phases 3 and 4 were skipped rather than done.
 - [x] Approver view — pending milestones, approve
 - [x] Degraded mode — claimable comes from simulating a contract read, so it
       works with no indexer at all, which is the state it currently runs in
-- [ ] Clawback warning when a stream's asset has issuer clawback enabled — the
-      disclosure [T6 and T7](threat-model.md#t7--issuer-clawback) say the
-      acceptance depends on. **Not built, and the accepted risk is not honest
-      until it is.**
+- [x] Clawback warning when a stream's asset has issuer clawback enabled, plus an
+      inline warning when the sender names themselves approver — the disclosure
+      [T6 and T7](threat-model.md#t7--issuer-clawback) say those acceptances
+      depend on. Both fire before the deposit is escrowed, since that is the
+      irreversible step.
 - [ ] Streams created from a CSV, for payroll runs
 
 Roles are not separate views: the interface shows the actions your connected
@@ -118,7 +119,9 @@ address is actually entitled to on each stream, which turned out to be simpler
 and to remove the "which view am I meant to be in" question entirely.
 
 **Done when:** someone who has never used a CLI can receive a grant through it.
-Not yet — the clawback warning is the gap.
+There is now a landing page that explains the idea without jargon and a
+[step-by-step walkthrough](../TESTING.md). CSV payroll runs are the remaining
+item, and they are a convenience rather than a gap in the story.
 
 ## Phase 6 — Trustless Work integration ⚪
 

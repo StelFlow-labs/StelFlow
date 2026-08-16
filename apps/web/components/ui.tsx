@@ -1,16 +1,6 @@
-/**
- * Interface primitives.
- *
- * Small and hand-written rather than pulled from a component library: the whole
- * surface is a handful of shapes, and owning them keeps the visual language
- * consistent with the docs — restrained, technical, numbers first.
- */
-
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
-
-// ---------------------------------------------------------------------------
 
 export function Card({
   children,
@@ -24,8 +14,7 @@ export function Card({
   return (
     <Tag
       className={cn(
-        "rounded-xl border border-edge bg-surface-1",
-        "shadow-[0_1px_2px_rgb(0_0_0/0.04)]",
+        "rounded-2xl border border-edge bg-surface-1 shadow-[var(--glow)]",
         className,
       )}
     >
@@ -47,36 +36,52 @@ export function CardHeader({
     <div className="flex items-start justify-between gap-4 border-b border-edge px-5 py-4">
       <div className="min-w-0">
         <h2 className="text-sm font-semibold tracking-tight text-ink">{title}</h2>
-        {hint ? <p className="mt-1 text-xs text-ink-muted">{hint}</p> : null}
+        {hint ? <p className="mt-1 text-xs leading-relaxed text-ink-3">{hint}</p> : null}
       </div>
       {actions ? <div className="shrink-0">{actions}</div> : null}
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
 const BUTTON_STYLES: Record<ButtonVariant, string> = {
   primary:
-    "bg-ink text-surface-1 hover:opacity-90 disabled:opacity-40 border border-transparent",
-  secondary:
-    "bg-surface-2 text-ink border border-edge hover:border-edge-strong disabled:opacity-40",
-  ghost:
-    "bg-transparent text-ink-secondary border border-transparent hover:bg-surface-2 disabled:opacity-40",
-  danger:
-    "bg-transparent text-[var(--status-critical)] border border-[var(--status-critical)] hover:bg-[var(--status-critical)]/10 disabled:opacity-40",
+    "bg-brand text-brand-ink border-transparent hover:brightness-105 active:brightness-95",
+  secondary: "bg-surface-2 text-ink border-edge hover:border-edge-2",
+  ghost: "bg-transparent text-ink-2 border-transparent hover:bg-surface-2 hover:text-ink",
+  danger: "bg-transparent text-bad border-bad/50 hover:bg-bad/10",
 };
+
+type ButtonSize = "sm" | "md" | "lg";
+
+/** Shared so links can wear button styling without a polymorphic component. */
+export function buttonClasses(
+  variant: ButtonVariant = "secondary",
+  size: ButtonSize = "md",
+  className?: string,
+) {
+  return cn(
+    "inline-flex items-center justify-center gap-2 rounded-xl border font-medium",
+    "transition-all disabled:cursor-not-allowed disabled:opacity-40",
+    size === "sm" && "px-3 py-1.5 text-xs",
+    size === "md" && "px-4 py-2.5 text-sm",
+    size === "lg" && "px-6 py-3.5 text-[15px]",
+    BUTTON_STYLES[variant],
+    className,
+  );
+}
 
 export function Button({
   variant = "secondary",
+  size = "md",
   className,
   busy,
   children,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   busy?: boolean;
 }) {
   return (
@@ -84,13 +89,7 @@ export function Button({
       {...props}
       disabled={props.disabled || busy}
       aria-busy={busy || undefined}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2",
-        "text-sm font-medium transition-[opacity,background-color,border-color]",
-        "disabled:cursor-not-allowed",
-        BUTTON_STYLES[variant],
-        className,
-      )}
+      className={buttonClasses(variant, size, className)}
     >
       {busy ? <Spinner /> : null}
       {children}
@@ -107,8 +106,6 @@ function Spinner() {
   );
 }
 
-// ---------------------------------------------------------------------------
-
 export function Field({
   label,
   hint,
@@ -122,16 +119,12 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-ink-secondary">
-        {label}
-      </span>
+      <span className="mb-1.5 block text-xs font-medium text-ink-2">{label}</span>
       {children}
       {error ? (
-        <span className="mt-1.5 block text-xs text-[var(--status-critical)]">
-          {error}
-        </span>
+        <span className="mt-1.5 block text-xs text-bad">{error}</span>
       ) : hint ? (
-        <span className="mt-1.5 block text-xs text-ink-muted">{hint}</span>
+        <span className="mt-1.5 block text-xs leading-relaxed text-ink-3">{hint}</span>
       ) : null}
     </label>
   );
@@ -146,9 +139,8 @@ export function Input({
     <input
       {...props}
       className={cn(
-        "w-full rounded-lg border border-edge bg-surface-0 px-3 py-2 text-sm text-ink",
-        "placeholder:text-ink-muted",
-        "focus:border-edge-strong focus:outline-none",
+        "w-full rounded-xl border border-edge bg-surface-0 px-3.5 py-2.5 text-sm text-ink",
+        "placeholder:text-ink-3 focus:border-brand focus:outline-none",
         mono && "tnum",
         className,
       )}
@@ -156,27 +148,18 @@ export function Input({
   );
 }
 
-// ---------------------------------------------------------------------------
-
-export type BadgeTone = "neutral" | "good" | "warning" | "critical" | "held";
+export type BadgeTone = "neutral" | "good" | "warn" | "bad" | "held" | "brand";
 
 const BADGE_TONES: Record<BadgeTone, string> = {
-  neutral: "text-ink-secondary bg-surface-2 border-edge",
-  good: "text-[var(--status-good)] bg-[var(--status-good)]/10 border-[var(--status-good)]/25",
-  warning:
-    "text-[var(--status-warning)] bg-[var(--status-warning)]/10 border-[var(--status-warning)]/25",
-  critical:
-    "text-[var(--status-critical)] bg-[var(--status-critical)]/10 border-[var(--status-critical)]/25",
+  neutral: "text-ink-2 bg-surface-2 border-edge",
+  good: "text-good bg-good/10 border-good/25",
+  warn: "text-warn bg-warn/10 border-warn/25",
+  bad: "text-bad bg-bad/10 border-bad/25",
   held: "text-held bg-held/10 border-held/25",
+  brand: "text-brand bg-brand/10 border-brand/25",
 };
 
-/**
- * A status chip.
- *
- * Always carries its label — status is never communicated by colour alone,
- * which is also what keeps it legible under forced-colors and to a
- * colour-blind reader.
- */
+/** Always carries its label — status is never colour alone. */
 export function Badge({
   tone = "neutral",
   children,
@@ -192,7 +175,7 @@ export function Badge({
     <span
       title={title}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5",
         "text-[11px] font-medium whitespace-nowrap",
         BADGE_TONES[tone],
         className,
@@ -203,14 +186,9 @@ export function Badge({
   );
 }
 
-// ---------------------------------------------------------------------------
-
 /**
- * A labelled figure.
- *
- * The value wears a text token, never a series colour — a colour swatch beside
- * the label carries identity instead, so the number stays readable at any
- * contrast.
+ * A labelled figure. The value wears a text token, never a series colour — a
+ * swatch beside the label carries identity instead.
  */
 export function Stat({
   label,
@@ -231,24 +209,20 @@ export function Stat({
         {swatch ? (
           <span
             aria-hidden
-            className="size-2 shrink-0 rounded-[2px]"
+            className="size-2 shrink-0 rounded-[3px]"
             style={{ background: swatch }}
           />
         ) : null}
-        <span className="truncate text-xs text-ink-muted">{label}</span>
+        <span className="truncate text-xs text-ink-3">{label}</span>
       </div>
       <div className="mt-1 flex items-baseline gap-1">
         <span className="tnum truncate text-lg font-medium text-ink">{value}</span>
-        {unit ? <span className="text-xs text-ink-muted">{unit}</span> : null}
+        {unit ? <span className="text-xs text-ink-3">{unit}</span> : null}
       </div>
-      {detail ? (
-        <div className="mt-0.5 text-[11px] text-ink-muted">{detail}</div>
-      ) : null}
+      {detail ? <div className="mt-0.5 text-[11px] text-ink-3">{detail}</div> : null}
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
 
 export function EmptyState({
   title,
@@ -258,20 +232,39 @@ export function EmptyState({
   children?: ReactNode;
 }) {
   return (
-    <div className="px-5 py-12 text-center">
-      <p className="text-sm font-medium text-ink-secondary">{title}</p>
+    <div className="px-5 py-14 text-center">
+      <p className="text-sm font-medium text-ink-2">{title}</p>
       {children ? (
-        <div className="mx-auto mt-2 max-w-sm text-xs text-ink-muted">{children}</div>
+        <div className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-ink-3">
+          {children}
+        </div>
       ) : null}
     </div>
   );
 }
 
 export function Skeleton({ className }: { className?: string }) {
+  return <div className={cn("animate-pulse rounded-lg bg-surface-2", className)} aria-hidden />;
+}
+
+export function Alert({
+  tone,
+  children,
+}: {
+  tone: "good" | "bad" | "warn";
+  children: ReactNode;
+}) {
+  const styles = {
+    good: "border-good/30 bg-good/10 text-good",
+    bad: "border-bad/30 bg-bad/10 text-bad",
+    warn: "border-warn/30 bg-warn/10 text-warn",
+  } as const;
   return (
-    <div
-      className={cn("animate-pulse rounded bg-surface-2", className)}
-      aria-hidden
-    />
+    <p
+      role="status"
+      className={cn("rounded-xl border px-4 py-3 text-xs leading-relaxed", styles[tone])}
+    >
+      {children}
+    </p>
   );
 }

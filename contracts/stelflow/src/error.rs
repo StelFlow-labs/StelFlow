@@ -1,72 +1,42 @@
-//! Error taxonomy.
-//!
-//! Distinct codes per failure so the SDK can render something better than
-//! "transaction failed", and so tests assert on the *reason* a call was
-//! rejected rather than merely that it was.
-
 use soroban_sdk::contracterror;
 
+/// One code per failure, so the SDK can say *why* rather than "transaction
+/// failed", and tests can assert on the reason.
+///
+/// Codes 1 and 2 were `AlreadyInitialized` / `NotInitialized`, both unreachable
+/// once setup moved into `__constructor`. Left unused rather than reassigned: a
+/// code must never change meaning between builds.
 #[contracterror]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum Error {
-    // 1 and 2 were AlreadyInitialized / NotInitialized. Both became unreachable
-    // when setup moved into `__constructor`, which cannot be called twice and
-    // cannot be skipped. The numbers are left unused rather than reassigned, so
-    // an error code never changes meaning between builds.
-
-    // ---- create_stream ----
-    /// `end` must be strictly greater than `start`; a zero-duration stream has
-    /// no accrual rate.
     InvalidTimeRange = 3,
-    /// The cliff must fall within `[start, end]`. A cliff after `end` would make
-    /// the stream unclaimable until the moment it completes.
     InvalidCliff = 4,
-    /// Amounts must be strictly positive.
     InvalidAmount = 5,
-    /// Milestone amounts sum to more than the deposit, leaving a negative base.
     MilestonesExceedTotal = 6,
     /// Past `MAX_MILESTONES_PER_STREAM`. An unbounded vector inside a stored
-    /// struct is a way to build a stream too expensive to ever withdraw from —
-    /// threat-model T2.
+    /// struct is a way to build a stream too expensive to ever withdraw from.
     TooManyMilestones = 7,
-    /// The token moved nothing, so there is no stream to create. Guards the
-    /// measured-delta path against a token whose `transfer` silently no-ops.
+    /// The token moved nothing, so there is no stream to create.
     NoValueReceived = 8,
 
-    // ---- lookup ----
     StreamNotFound = 9,
-
-    // ---- withdraw ----
-    /// Claimable is zero. Not an error condition in the moral sense, but the
-    /// caller paid a fee for a state-changing call that changed nothing, and
-    /// saying so is friendlier than a silent success.
+    /// Claimable is zero. Reported rather than silently succeeding, because the
+    /// caller paid a fee for a state change that did not happen.
     NothingToWithdraw = 10,
 
-    // ---- approve_milestone ----
     MilestoneNotFound = 11,
-    /// The tranche was returned to the sender by a cancellation. There is
-    /// nothing left to release.
     MilestoneForfeited = 12,
-
-    // ---- cancel ----
-    /// Already cancelled. Accrual is frozen; a second cancel has nothing to do.
     AlreadyCanceled = 13,
 
-    // ---- pause ----
-    /// `create_stream` while paused. Note this is the *only* entry point that
-    /// can return this error.
+    /// Returned only by `create_stream` — no other entry point is pausable.
     Paused = 14,
-    /// Caller is not the pauser, or the role has been renounced.
     NotPauser = 15,
 
-    // ---- invariants ----
     /// A payout would have exceeded its own stream's remaining deposit. The
-    /// contract's token balance is pooled across streams, so this is what stops
-    /// one stream's accounting bug reaching another's money. Unreachable if the
-    /// accrual maths is right — which is exactly why it is asserted.
+    /// contract's token balance is pooled, so this is what keeps one stream's
+    /// accounting from reaching another's money. Unreachable if the accrual
+    /// maths is right, which is why it is asserted rather than assumed.
     InsolventStream = 16,
-    /// Arithmetic overflowed. `i128` against stroop-denominated amounts makes
-    /// this effectively unreachable, and it is checked rather than assumed.
     Overflow = 17,
 }

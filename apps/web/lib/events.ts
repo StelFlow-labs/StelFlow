@@ -162,30 +162,24 @@ export function describeActivity(event: Activity): string {
   const { fields } = event;
   switch (event.kind) {
     case "stream_created":
-      return "Stream created and deposit escrowed";
+      return "A stream started and the money was locked in";
     case "withdrawn":
-      return "Recipient withdrew accrued balance";
+      return "The recipient took what they had earned";
     case "milestone_approved":
-      return `Milestone ${asNumber(fields.index) ?? "?"} approved — tranche released`;
+      return `A milestone was signed off, releasing what it held`;
     case "stream_canceled":
-      return "Stream cancelled and settled";
+      return "A stream was stopped and both sides settled";
     case "paused":
-      return "New stream creation suspended";
+      return "New streams were paused";
     case "unpaused":
-      return "New stream creation resumed";
+      return "New streams were allowed again";
     case "pauser_changed":
       // "Transferred" would be wrong for the first one: the constructor emits
       // this too, and at that point there is no prior holder to transfer from.
       return fields.pauser
-        ? "Pauser role set"
-        : "Pauser role renounced — the contract is now privilege-free";
+        ? "The pause key was set"
+        : "The pause key was given up for good";
   }
-}
-
-function asNumber(value: unknown): number | null {
-  if (typeof value === "bigint") return Number(value);
-  if (typeof value === "number") return value;
-  return null;
 }
 
 /** The stroop amount an event moved, when it moved one. */

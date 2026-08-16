@@ -1,34 +1,20 @@
-//! Contract events.
+//! Contract events — the product's read path, not a debugging aid.
 //!
-//! These are the product's read path, not a debugging aid. Soroban contracts
-//! cannot be queried historically from inside the chain, so everything the
-//! dashboard shows about the past is reconstructed by folding this log — see
-//! `docs/indexer-design.md`.
+//! Soroban contracts cannot be queried historically from inside the chain, so
+//! everything a client shows about the past is folded from this log.
 //!
-//! Declared with `#[contractevent]`, so each event carries a self-describing map
-//! of named fields and appears in the contract's generated interface. A client
-//! reads `stream_id` by name rather than by tuple position, which means adding a
-//! field later cannot silently shift what an existing consumer parses.
+//! Two rules shape the set below. Every stream event carries `stream_id` as a
+//! topic, so clients filter server-side. And events record *actions*, never the
+//! passage of time — nothing fires when a cliff lapses, a deadline expires, or a
+//! stream reaches `end`, because nothing happens on-chain at those instants.
 //!
-//! Three rules shape the set below, and each is load-bearing:
-//!
-//! 1. **Every stream event carries `stream_id` as a topic**, so a client filters
-//!    server-side instead of pulling the whole log and discarding most of it.
-//! 2. **Events record actions, never the passage of time.** Nothing fires when a
-//!    cliff lapses, a milestone deadline expires, or a stream reaches `end` —
-//!    nothing happens on-chain at those instants. A client derives them from the
-//!    same stored fields and clock the contract uses.
-//! 3. **An action emits exactly one event, once.** A duplicate `approve_milestone`
-//!    is absorbed silently, so a fold can treat each event as a distinct state
-//!    transition without deduplicating by hand.
+//! Note the topic derived from each struct name is **snake_case**:
+//! `StreamCreated` publishes as `stream_created`.
 
 use soroban_sdk::{contractevent, Address};
 
-/// A stream was opened and its deposit escrowed.
-///
-/// `total` is the **measured** amount that arrived, which for a fee-on-transfer
-/// token is less than the sender asked to send. A client should render this
-/// figure rather than the one from the submitted transaction.
+/// `total` is the measured amount that arrived, which for a fee-on-transfer
+/// token is less than the sender asked to send.
 #[contractevent]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StreamCreated {
@@ -47,8 +33,6 @@ pub struct StreamCreated {
     pub milestone_count: u32,
 }
 
-/// The recipient took some of what had accrued.
-///
 /// Carries the running total as well as the delta, so a client that missed an
 /// earlier event still renders a correct balance from the latest one.
 #[contractevent]
@@ -62,7 +46,8 @@ pub struct Withdrawn {
     pub withdrawn_total: i128,
 }
 
-/// An approver opened a gate. Emitted at most once per milestone, ever.
+/// Emitted at most once per milestone, ever — a repeat approval is absorbed
+/// silently, so a fold never sees one approval twice.
 #[contractevent]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MilestoneApproved {
@@ -74,26 +59,20 @@ pub struct MilestoneApproved {
     pub amount: i128,
 }
 
-/// A stream was cancelled and both sides settled.
-///
-/// `recipient_balance` is left in the contract for the recipient to withdraw at
-/// their leisure — cancellation freezes accrual, it does not claw back earned
-/// money.
 #[contractevent]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StreamCanceled {
     #[topic]
     pub stream_id: u64,
     pub refund_to_sender: i128,
+    /// Stays in the contract for the recipient to withdraw at their leisure.
     pub recipient_balance: i128,
     pub canceled_at: u64,
 }
 
-/// New stream creation was suspended until `paused_until`.
-///
 /// Contract-wide, and it reaches exactly one entry point. A client should render
-/// this as "new streams are not being accepted" and never as anything touching
-/// an existing stream, because it cannot.
+/// it as "new streams are not being accepted", never as anything touching an
+/// existing stream.
 #[contractevent]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Paused {
@@ -106,10 +85,8 @@ pub struct Unpaused {
     pub at: u64,
 }
 
-/// The pauser role moved, or — when `pauser` is `None` — was given up for good.
-///
 /// A `None` here is the contract announcing it has become permanently
-/// privilege-free. There is no upgrade path that could restore the role.
+/// privilege-free.
 #[contractevent]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PauserChanged {
