@@ -29,7 +29,7 @@ in your PR — see "How you get added" below. Alphabetical by handle. Format:
 
 ### This release
 
-The MVP — contract, deployment, and dashboard — was built by [@jayteemoney](https://github.com/jayteemoney) with [Claude Code](https://claude.com/claude-code). Work that came from other people is credited above and in the commit history; where a design decision came from a contributor's PR, the document recording it says so.
+The MVP — contract, deployment, and dashboard — was built by [@jayteemoney](https://github.com/jayteemoney). Work that came from other people is credited above and in the commit history; where a design decision came from a contributor's PR, the document recording it says so.
 
 ## Design review and prior art
 
