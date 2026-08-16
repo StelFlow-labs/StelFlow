@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300"
+     role="img" aria-label="StelFlow — payment streaming with milestone gates, on Stellar">
+  <title>StelFlow — payment streaming with milestone gates, on Stellar</title>
+  <!--
+    Light-theme banner. See banner-dark.svg for why this is two explicit-colour
+    files rather than one using currentColor, and why the type is set with
+    presentation attributes instead of a <style> block.
+  -->
+
+  <g transform="translate(80 106) scale(1.38)" fill="none" stroke="#0b0b0b"
+     stroke-width="6" stroke-linecap="round">
+    <path d="M10 18 H54" opacity="0.9" />
+    <path d="M10 32 H26" />
+    <path d="M42 32 H54" opacity="0.35" />
+    <path d="M10 46 H54" opacity="0.9" />
+    <path d="M34 22 V42" />
+  </g>
+
+  <text x="204" y="150" fill="#0b0b0b" font-family="Helvetica, Arial, sans-serif"
+        font-size="76" font-weight="600" letter-spacing="-1.5">StelFlow</text>
+  <text x="208" y="192" fill="#52514e" font-family="Menlo, Consolas, monospace"
+        font-size="26">payment streaming with milestone gates, on Stellar</text>
+  <text x="208" y="228" fill="#83817a" font-family="Menlo, Consolas, monospace"
+        font-size="20">testnet · non-upgradeable · unaudited</text>
+
+  <g stroke="#0b0b0b" stroke-width="2" opacity="0.22" stroke-linecap="round">
+    <path d="M80 268 H612" />
+    <path d="M660 268 H1120" />
+  </g>
+  <path d="M636 254 V282" stroke="#52514e" stroke-width="2" opacity="0.5"
+        stroke-linecap="round" />
+</svg>

@@ -39,7 +39,7 @@ fn bump_instance(env: &Env) {
         .extend_ttl(ceiling / EXTEND_THRESHOLD_DIVISOR, ceiling);
 }
 
-fn bump_stream(env: &Env, stream_id: u64) {
+fn bump_stream_entry(env: &Env, stream_id: u64) {
     let ceiling = max_ttl(env);
     env.storage().persistent().extend_ttl(
         &DataKey::Stream(stream_id),
@@ -56,7 +56,7 @@ pub fn save_stream(env: &Env, stream: &Stream) {
     env.storage()
         .persistent()
         .set(&DataKey::Stream(stream.id), stream);
-    bump_stream(env, stream.id);
+    bump_stream_entry(env, stream.id);
 }
 
 /// Load a stream, extending its TTL as a side effect.
@@ -72,7 +72,7 @@ pub fn load_stream(env: &Env, stream_id: u64) -> Result<Stream, Error> {
         .persistent()
         .get(&DataKey::Stream(stream_id))
         .ok_or(Error::StreamNotFound)?;
-    bump_stream(env, stream_id);
+    bump_stream_entry(env, stream_id);
     Ok(stream)
 }
 
@@ -93,11 +93,11 @@ pub fn peek_stream(env: &Env, stream_id: u64) -> Result<Stream, Error> {
 /// third-party keeper can all keep a dormant stream alive. This mirrors
 /// `ExtendFootprintTTLOp`, which has no auth check either, so gating it would
 /// buy nothing except the illusion of control.
-pub fn touch_stream(env: &Env, stream_id: u64) -> Result<(), Error> {
+pub fn bump_stream_ttl(env: &Env, stream_id: u64) -> Result<(), Error> {
     if !env.storage().persistent().has(&DataKey::Stream(stream_id)) {
         return Err(Error::StreamNotFound);
     }
-    bump_stream(env, stream_id);
+    bump_stream_entry(env, stream_id);
     Ok(())
 }
 

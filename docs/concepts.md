@@ -2,7 +2,7 @@
 
 This page explains money streaming and milestone-gating from zero. If you already know Sablier, skip to [Milestone gates](#milestone-gates) — that part is where StelFlow differs.
 
-Everything here describes the intended design. None of it is implemented.
+**Status: the contract is built, tested and live on [Stellar testnet](https://stellar.expert/explorer/testnet/contract/CBUWKI666QTSYUSPWNGWN6HIE3EB6NHDQ3BDCACAT2ADQFCOYU57NRL7). It has not been audited, and nothing is on mainnet.** The indexer and the Trustless Work integration are still unbuilt and are marked as such where they come up.
 
 ## The problem with paying people over time
 

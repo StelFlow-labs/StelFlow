@@ -340,8 +340,8 @@ impl StelFlow {
     /// `ExtendFootprintTTLOp` has no auth check either, so gating this would buy
     /// nothing but the illusion of control. It lets a sender, a grant
     /// administrator, or a third-party keeper keep a dormant stream alive.
-    pub fn touch(env: Env, stream_id: u64) -> Result<(), Error> {
-        storage::touch_stream(&env, stream_id)
+    pub fn bump_stream(env: Env, stream_id: u64) -> Result<(), Error> {
+        storage::bump_stream_ttl(&env, stream_id)
     }
 
     // -----------------------------------------------------------------------

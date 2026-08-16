@@ -219,6 +219,9 @@ fn one_stream_cannot_drain_another() {
 fn anyone_can_extend_a_streams_ttl() {
     let h = Harness::new();
     let id = h.simple();
-    h.client.touch(&id);
-    assert_eq!(h.client.try_touch(&404), Err(Ok(Error::StreamNotFound)));
+    h.client.bump_stream(&id);
+    assert_eq!(
+        h.client.try_bump_stream(&404),
+        Err(Ok(Error::StreamNotFound))
+    );
 }

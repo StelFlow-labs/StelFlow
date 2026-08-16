@@ -2,7 +2,7 @@
 
 Where StelFlow is going and in what order. Phases are sequenced by dependency, not by date — each one exists because the next one can't be built without it.
 
-**Nothing below is built.** Every phase is planned. When something ships, its checkbox gets ticked and this line gets narrower.
+**Phases 0 to 2 are built and on testnet; Phase 5's dashboard is built alongside them.** Everything else is still planned. When something ships, its checkbox gets ticked and this line gets narrower.
 
 <!-- TODO(maintainer): add target dates or a funding milestone mapping if this feeds a grant application. Leaving them out is honest; a reviewer will ask, so decide what you can actually commit to. -->
 

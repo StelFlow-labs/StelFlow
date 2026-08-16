@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300"
+     role="img" aria-label="StelFlow — payment streaming with milestone gates, on Stellar">
+  <title>StelFlow — payment streaming with milestone gates, on Stellar</title>
+  <!--
+    Dark-theme banner. Paired with banner-light.svg through a <picture> element
+    in the README.
+
+    Two constraints forced this shape, and both were found by trying the simpler
+    version first:
+
+    1. `currentColor` cannot work here. GitHub renders a README image inside an
+       <img>, which has no inherited text colour, so currentColor resolves to
+       black and the whole banner vanishes on a dark background. Hence explicit
+       colours and two files.
+    2. No <style> block. GitHub sanitises <style> out of SVGs rendered in
+       markdown, which would strip every font declaration and leave the type in
+       a default serif at the wrong size. Presentation attributes survive.
+
+    assets/banner.svg keeps the currentColor version, which is correct for any
+    context that inlines the SVG rather than loading it as an image.
+  -->
+
+  <g transform="translate(80 106) scale(1.38)" fill="none" stroke="#ffffff"
+     stroke-width="6" stroke-linecap="round">
+    <path d="M10 18 H54" opacity="0.9" />
+    <path d="M10 32 H26" />
+    <path d="M42 32 H54" opacity="0.35" />
+    <path d="M10 46 H54" opacity="0.9" />
+    <path d="M34 22 V42" />
+  </g>
+
+  <text x="204" y="150" fill="#ffffff" font-family="Helvetica, Arial, sans-serif"
+        font-size="76" font-weight="600" letter-spacing="-1.5">StelFlow</text>
+  <text x="208" y="192" fill="#c3c2b7" font-family="Menlo, Consolas, monospace"
+        font-size="26">payment streaming with milestone gates, on Stellar</text>
+  <text x="208" y="228" fill="#8d8b81" font-family="Menlo, Consolas, monospace"
+        font-size="20">testnet · non-upgradeable · unaudited</text>
+
+  <!-- A hairline stream running the width, interrupted once under "gates". -->
+  <g stroke="#ffffff" stroke-width="2" opacity="0.22" stroke-linecap="round">
+    <path d="M80 268 H612" />
+    <path d="M660 268 H1120" />
+  </g>
+  <path d="M636 254 V282" stroke="#c3c2b7" stroke-width="2" opacity="0.5"
+        stroke-linecap="round" />
+</svg>

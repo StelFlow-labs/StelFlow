@@ -329,13 +329,26 @@ against a four-year vest rescues well under one percent. The convention is calib
 importing it here without checking the arithmetic is exactly the mistake this document exists to
 avoid.
 
-<!-- TODO(maintainer): verify before this is cited anywhere load-bearing (a grant application, an
-audit brief). Sablier is the closest prior art — streaming payments, same problem shape — and my
-recollection is that its V2 core shipped non-upgradeable with a periphery layer for the mutable
-parts. Confirm against their current governance docs rather than trusting this note, and if it holds,
-the two-layer split is worth evaluating on its own merits: it is a way to keep custody immutable
-while leaving convenience code replaceable. Soroban-specific prior art on immutable custody contracts
-would be more valuable still and I did not find any I could verify. -->
+**Sablier shipped its V2 core non-upgradeable, and it is the closest prior art there is** — token
+streaming, same problem shape, years of production use. Their
+[governance docs](https://docs.sablier.com/concepts/governance) state it directly: the protocol "is
+not upgradeable, meaning that no party can pause the contracts, reverse transactions, or alter the
+users' streams in any way."
+
+Two details make it more useful than a bare precedent. First, a Protocol Admin *does* exist and holds
+specific functions — so the shape they shipped is not "no roles at all", it is an immutable core with
+a role that cannot reach user streams. That is the same split this decision arrives at, reached
+independently and from a different direction. Second, it demonstrates the position is *deployable*
+rather than merely principled: the objection that a non-upgradeable custody contract is too risky to
+actually ship is answered by a protocol that shipped one and is still running.
+
+Checked 2026-08-16. Fuller survey, including what the two Soroban-native streaming projects do and do
+not implement, is in [comparison.md](comparison.md).
+
+<!-- TODO(maintainer): I found no Soroban-specific prior art on immutable custody contracts that I
+could verify — neither Soroban streaming project publishes an upgradeability policy. If one appears,
+it is worth more than the EVM precedent above, because the archival and TTL mechanics are what make
+immutability awkward here and they have no EVM analogue. -->
 
 ## Next
 

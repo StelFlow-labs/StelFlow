@@ -2,7 +2,7 @@
 
 Questions a developer or a treasurer actually asks, answered from what the design says today.
 
-**Nothing here is built.** There are no contracts, no deployment, and no audit — see [SECURITY.md](SECURITY.md#current-status). Every answer below describes intended behavior, and where the design hasn't decided something, the answer says so and links the open question rather than inventing a confident one.
+**The contract is built and running on testnet; it has not been audited** — see [SECURITY.md](SECURITY.md#current-status) and the deployment at [stellar.expert](https://stellar.expert/explorer/testnet/contract/CBUWKI666QTSYUSPWNGWN6HIE3EB6NHDQ3BDCACAT2ADQFCOYU57NRL7). Answers below describe behaviour that now exists unless they say otherwise, and where the design still hasn't decided something the answer says so and links the open question rather than inventing a confident one.
 
 ## The basics
 
@@ -12,11 +12,11 @@ Someone has to sign those 12 transactions on schedule. If that person leaves, lo
 
 ### What assets can I stream?
 
-Anything implementing the [SEP-41 token interface](architecture.md#sep-41-assets), which includes the Stellar Asset Contract — so any classic Stellar asset, USDC included, works through its SAC wrapper, alongside purpose-built Soroban tokens. Two limits are worth knowing before you pick one. SEP-41 is still a Draft SEP, so the contract is meant to depend only on the functions it actually calls rather than the full surface. And **fee-on-transfer or rebasing tokens break accrual accounting** — the contract would end up holding less than the stream promises. Whether `create_stream` will reject those by verifying the received balance, or whether they'll simply be documented as unsupported, is [an open TODO in the design](architecture.md#sep-41-assets).
+Anything implementing the [SEP-41 token interface](architecture.md#sep-41-assets), which includes the Stellar Asset Contract — so any classic Stellar asset, USDC included, works through its SAC wrapper, alongside purpose-built Soroban tokens. Two limits are worth knowing before you pick one. SEP-41 is still a Draft SEP, so the contract is meant to depend only on the functions it actually calls rather than the full surface. And **rebasing tokens are unsupported**. Fee-on-transfer used to be an open question and is now settled: `create_stream` stores the contract's *measured* balance delta across the transfer rather than the amount you asked to send, so the stream is sized to what actually arrived and the accounting is true by construction. Rebasing is not fixable the same way — no creation-time measurement can bind a balance that moves afterwards — see [architecture.md](architecture.md#sep-41-assets).
 
 ### When can I use it?
 
-There is no date, deliberately. [ROADMAP.md](ROADMAP.md) sequences the work by dependency rather than by calendar, and it is currently on Phase 0 of 8 — design and docs. Usable-on-testnet is Phase 1; milestones and cancellation are Phase 2; mainnet is Phase 8, gated behind an external audit in Phase 7. The roadmap is explicit that mainnet is done "when there is a mainnet address in the README and it's the real one," and there isn't one. If you need a date for a funding or planning decision, treat the answer as "not soon enough to plan around."
+**On testnet, now** — the contract is deployed and the dashboard drives every entry point. On mainnet, there is still no date, deliberately. [ROADMAP.md](ROADMAP.md) sequences by dependency rather than calendar: mainnet is Phase 8, gated behind an external audit in Phase 7, and it is done "when there is a mainnet address in the README and it's the real one." There isn't one. If you need a date for a funding or planning decision, treat the answer as "not soon enough to plan around."
 
 ## Receiving a stream
 
@@ -24,13 +24,13 @@ There is no date, deliberately. [ROADMAP.md](ROADMAP.md) sequences the work by d
 
 Nothing bad, and nothing is lost. Accrual is [computed rather than pushed](concepts.md#money-streaming), so not withdrawing costs you nothing and your balance keeps rising on its own until the end of the stream. The one real consequence is Soroban's [state archival](architecture.md#storage-type-and-ttl): a stream's entry has a TTL, and a stream nobody touches for long enough — a 4-year vesting stream with a 1-year cliff, say — will archive.
 
-Archived is not deleted. Stream state lives in `persistent` storage precisely because those entries are archived rather than destroyed, and a `RestoreFootprintOp` brings the entry back for a fee, after which you withdraw normally. Every state-changing call extends the TTL, so a stream you use regularly keeps itself alive for free, and a public `bump_stream` entry point lets *anyone* — the sender, a watcher service — keep a dormant stream hot without you doing anything. Handling this cleanly is a [named, non-optional requirement on the SDK](ROADMAP.md#phase-4--typescript-sdk-), so you should get a restore-then-withdraw flow rather than a confusing "stream not found."
+Archived is not deleted. Stream state lives in `persistent` storage precisely because those entries are archived rather than destroyed, and a `RestoreFootprintOp` brings the entry back for a fee, after which you withdraw normally. Every state-changing call extends the TTL, so a stream you use regularly keeps itself alive for free, and a public `touch` entry point lets *anyone* — the sender, a watcher service — keep a dormant stream hot without you doing anything. Handling this cleanly is a [named, non-optional requirement on the SDK](ROADMAP.md#phase-4--typescript-sdk-), so you should get a restore-then-withdraw flow rather than a confusing "stream not found."
 
 ### What does a withdrawal cost, and does withdrawing more often cost me more?
 
 Each withdrawal is an ordinary Stellar transaction, so it costs a transaction fee, paid by you. Withdrawing more often costs more in aggregate fees, but it [changes nothing about the total you receive](concepts.md#money-streaming) — the formula doesn't care how many times you settle against it. Withdraw daily for cash flow or once at the end to minimize fees; the arithmetic is identical either way.
 
-No concrete figure exists, because nothing is deployed and Soroban fees depend on live network settings rather than constants. One concrete thing that *is* known: [resolution is a ledger, not a second](architecture.md#ledger-time-is-the-clock), so two withdrawals inside the same ledger see an identical timestamp and the second is a no-op — you'd pay a fee for nothing.
+No concrete figure is quoted here, because Soroban fees depend on live network settings rather than constants — simulate against the network for a real number. One concrete thing that *is* known: [resolution is a ledger, not a second](architecture.md#ledger-time-is-the-clock), so two withdrawals inside the same ledger see an identical timestamp and the second is a no-op — you'd pay a fee for nothing.
 
 ### Can the sender take back money I've already earned?
 
@@ -58,7 +58,7 @@ Cancellation does not rescue this. If the sender cancels, your earned balance [s
 
 Not from a single stream. A stream is [one sender → one recipient, one asset, one schedule](concepts.md#money-streaming), and splitting one N ways multiplies the per-transaction entry cost, which runs into [the read budget that shapes the whole storage design](architecture.md#the-per-transaction-read-budget). Multi-recipient streams are [explicitly deferred](ROADMAP.md#not-on-the-roadmap), pending that entry-cost question, and listed as [an open question](architecture.md#open-questions) where the maintainer invites disagreement — so if you have the payroll use case, arguing for it in an issue is a genuinely useful contribution.
 
-For now the intended answer is N separate streams, with bounded batch entry points (`withdraw_many`, `bump_many`) planned so that operating them doesn't mean N transactions for every action.
+For now the answer is N separate streams. Bounded batch entry points (`withdraw_many`, `bump_many`) are designed but **not yet implemented**, so operating many streams currently does mean a transaction per action. See [use-case-dao-payroll.md](use-case-dao-payroll.md) for how that plays out in practice.
 
 ### Can I change a stream after it's created?
 
@@ -78,7 +78,7 @@ Practically: **check the asset's flags before you rely on a stream denominated i
 
 ### Is this audited?
 
-No. There are no contracts to audit — nothing in this repository executes anywhere, and [SECURITY.md says so directly](SECURITY.md#current-status): no deployed contracts, no audit, no funds at risk. Its instruction is unambiguous: do not use anything in this repository with real value until that file says a deployment has been audited.
+No. There is now a contract to audit — it runs on testnet — but no audit has happened, and [SECURITY.md says so directly](SECURITY.md#current-status). The instruction is unchanged and now matters more than it did: do not use this with real value until that file says a deployment has been audited. The contract is **non-upgradeable by design**, so a bug found after mainnet could not be patched — which raises the stakes on an audit rather than lowering them.
 
 An external audit is [Phase 7](ROADMAP.md#phase-7--hardening-and-audit-), after property-based tests, fuzzing, and an internal review against a written threat model, and the phase is done only when an audit report is published in this repository, findings and all. Two honest notes on that: Phase 7 is six phases away, and the roadmap carries an unresolved TODO asking the maintainer to state how an audit would be funded — so it is a stated intention, not a booked engagement.
 

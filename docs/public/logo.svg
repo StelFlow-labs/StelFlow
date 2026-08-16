@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"
+     role="img" aria-label="StelFlow">
+  <title>StelFlow</title>
+  <!--
+    Site copy of assets/logo.svg. Same mark, but with an explicit colour rather
+    than `currentColor`: this file is also served as the favicon, and a favicon
+    has no inherited text colour to take — it would resolve to black and vanish
+    against dark browser chrome. The blue is the app's `withdrawn` series token,
+    which clears 3:1 against both light and dark surfaces.
+  -->
+  <g fill="none" stroke="#2a78d6" stroke-width="6" stroke-linecap="round">
+    <path d="M10 18 H54" opacity="0.9" />
+    <path d="M10 32 H26" />
+    <path d="M42 32 H54" opacity="0.35" />
+    <path d="M10 46 H54" opacity="0.9" />
+    <path d="M34 22 V42" />
+  </g>
+</svg>

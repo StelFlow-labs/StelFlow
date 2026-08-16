@@ -27,7 +27,7 @@ The write pattern is append-heavy (one row per contract event, never updated) wi
 | **TimescaleDB / ClickHouse** | Built for exactly this write pattern at much higher volume, but StelFlow's event rate (one contract, per-stream state changes) doesn't come close to needing columnar storage or hypertables yet. Adds an operational dependency the project doesn't need in Phase 3. | Revisit only if reconciliation/analytics queries become the bottleneck — and Timescale is a Postgres extension, so that path doesn't require a rewrite. |
 | **DynamoDB / Mongo** | No natural fit for "give me every withdrawal for this stream between two ledgers" without a secondary index that duplicates Postgres's btree for free. Loses transactional guarantees the checkpoint design below depends on. | Not recommended. |
 
-**Runtime:** Node.js/TypeScript. The indexer decodes the same contract events the [SDK](architecture.md#3-typescript-sdk--planned) will have typed bindings for — sharing the decode path and event types between indexer and SDK avoids a second, drifting implementation of "what does a `withdraw` event look like." A typed query layer over Postgres (e.g. Drizzle) keeps the schema below and the TypeScript types it's the same language as the rest of the stack.
+**Runtime:** Node.js/TypeScript. The indexer decodes the same contract events the [SDK](architecture.md#3-typescript-sdk--generated) already has typed bindings for — sharing the decode path and event types between indexer and SDK avoids a second, drifting implementation of "what does a `withdraw` event look like." A typed query layer over Postgres (e.g. Drizzle) keeps the schema below and the TypeScript types it's the same language as the rest of the stack.
 
 ## 3. Cursor and checkpoint design
 

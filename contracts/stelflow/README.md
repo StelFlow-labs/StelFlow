@@ -16,7 +16,7 @@ accumulated, so integer truncation never compounds.
 | `withdraw` | recipient | Pays out everything currently claimable. |
 | `approve_milestone` | that milestone's approver | Opens a gate, releasing accrual that has already happened. |
 | `cancel` | sender — **and the recipient** when `cancelable = false` | Freezes accrual and settles both sides. |
-| `touch` | anyone | Extends a stream's TTL. Permissionless by design. |
+| `bump_stream` | anyone | Extends a stream's TTL. Permissionless by design. |
 | `pause` / `unpause` / `transfer_pauser` / `renounce_pauser` | pauser | Reaches `create_stream` and nothing else. |
 
 ## The three properties worth knowing

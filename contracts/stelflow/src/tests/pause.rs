@@ -34,7 +34,7 @@ fn pausing_stops_creation_and_leaves_everything_else_alone() {
     // Everything touching the existing stream still works, unchanged.
     h.client.approve_milestone(&id, &0);
     assert_eq!(h.client.withdraw(&id), 18_000_000_000);
-    h.client.touch(&id);
+    h.client.bump_stream(&id);
     h.client.cancel(&id);
     h.assert_conserved(TOTAL);
 }

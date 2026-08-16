@@ -1,6 +1,6 @@
 # Architecture
 
-This describes the intended system and the reasoning behind it. **None of it is implemented.** Where a number or an interface is still undecided, there is a TODO rather than a guess.
+This describes the system and the reasoning behind it. **Status: the contract is built, tested and live on [Stellar testnet](https://stellar.expert/explorer/testnet/contract/CBUWKI666QTSYUSPWNGWN6HIE3EB6NHDQ3BDCACAT2ADQFCOYU57NRL7). It has not been audited, and nothing is on mainnet.** The indexer and the Trustless Work integration are still unbuilt and are marked as such where they come up. Where a number or an interface is still undecided, there is a TODO rather than a guess.
 
 Read [concepts.md](concepts.md) first if "streamed vs. claimable" isn't already obvious to you. [glossary.md](glossary.md) defines the Soroban-specific vocabulary this page uses.
 
@@ -8,7 +8,7 @@ Read [concepts.md](concepts.md) first if "streamed vs. claimable" isn't already 
 
 Four pieces. Only the first one is trusted.
 
-### 1. StelFlow Core (Soroban contract, Rust) — planned
+### 1. StelFlow Core (Soroban contract, Rust) — built
 
 Holds custody, owns the accrual math, and is the only component that can move money. Everything else is a view of it.
 
@@ -36,7 +36,7 @@ Runtime and datastore: a Node/TypeScript poller against `getEvents` (RPC exposes
 
 <!-- TODO(maintainer): the mechanism above is decided; what's still open is the tunable numbers — confirmation depth (CONFIRMATION_LEDGERS), poll interval, and reconciliation-job interval. Those need measurement against a real deployment, not a guess, per docs/research/indexer-design.md#11-what-this-doesnt-settle. -->
 
-### 3. TypeScript SDK — planned
+### 3. TypeScript SDK — generated
 
 The layer application developers actually touch. Typed bindings generated from the contract spec, plus the things raw bindings don't give you:
 
@@ -44,7 +44,7 @@ The layer application developers actually touch. Typed bindings generated from t
 - **Transaction assembly** — build, simulate, and submit, with the auth entries a withdrawal needs.
 - **Indexer client** for history.
 
-### 4. React dashboard — planned
+### 4. Dashboard — built
 
 Create streams, watch them accrue, withdraw, approve milestones, cancel. Three views because there are three roles: sender, recipient, approver.
 

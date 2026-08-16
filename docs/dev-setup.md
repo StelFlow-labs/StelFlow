@@ -8,7 +8,7 @@ live in [CONTRIBUTING.md](CONTRIBUTING.md); that file now points here.
 here](#what-wasnt-verified-here) for the two steps this pass didn't get through, and
 [Troubleshooting](#troubleshooting) for what's expected to differ on macOS/WSL.
 
-There is no code in this repo yet — see [ROADMAP.md](ROADMAP.md). Nothing here builds a
+This repo now has a contract, a dashboard, and generated bindings — see the [quickstart](../README.md#quickstart) to run them. The setup below is the toolchain they need. Nothing here builds a
 contract. This doc ends at "the toolchain is verified," not "the project builds," because that
 second thing doesn't exist yet.
 
