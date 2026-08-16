@@ -1,0 +1,56 @@
+# Web app and docs site CI.
+#
+# The bindings are generated rather than committed, so this workflow cannot type
+# check the app without them. It regenerates from the deployed contract, which
+# also makes the job a live check that `deployments.json` still points at
+# something real.
+name: web
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/**", "docs/**", "package.json", "pnpm-lock.yaml", ".github/workflows/web.yml"]
+  pull_request:
+    paths: ["apps/**", "docs/**", "package.json", "pnpm-lock.yaml", ".github/workflows/web.yml"]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0 # VitePress reads history for per-page "last updated"
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Pinned rather than "latest": a CLI upgrade can change the shape of the
+      # generated bindings, and that should show up as a deliberate diff rather
+      # than as an unrelated PR going red. Matches the version this was developed
+      # against.
+      - name: Install Stellar CLI
+        env:
+          STELLAR_CLI_VERSION: 27.1.0
+        run: |
+          curl -sSfL \
+            "https://github.com/stellar/stellar-cli/releases/download/v${STELLAR_CLI_VERSION}/stellar-cli-${STELLAR_CLI_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar -xz -C /usr/local/bin stellar
+          stellar --version
+
+      - run: pnpm install --frozen-lockfile
+
+      # Regenerating here rather than committing the output keeps the checked-in
+      # tree from drifting away from the Wasm actually on chain. If this step
+      # fails, deployments.json is pointing at a contract that no longer answers.
+      - name: Generate contract bindings
+        run: pnpm bindings
+
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm docs:build

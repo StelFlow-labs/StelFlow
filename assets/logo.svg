@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"
+     role="img" aria-label="StelFlow">
+  <title>StelFlow</title>
+  <!--
+    The mark is the protocol's actual mechanism, not a decoration.
+
+    A stream is a continuous line. A milestone gate is a break in it that holds
+    value back until an approver opens it. So: three flowing rules, and one
+    upright bar interrupting the middle one — the gate. The top and bottom rules
+    pass through uninterrupted, which is the design's real claim: a gate holds
+    its own tranche and reaches nothing else.
+
+    Drawn on a 64-unit grid with 6-unit strokes so it survives downscaling to
+    16px. currentColor throughout, so it inherits the surrounding text colour and
+    works on any background in either theme without a second asset.
+  -->
+  <g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round">
+    <path d="M10 18 H54" opacity="0.9" />
+    <path d="M10 32 H26" />
+    <path d="M42 32 H54" opacity="0.35" />
+    <path d="M10 46 H54" opacity="0.9" />
+  </g>
+  <!-- The gate: the one vertical element, holding the middle tranche shut. -->
+  <path d="M34 22 V42" fill="none" stroke="currentColor" stroke-width="6"
+        stroke-linecap="round" />
+</svg>

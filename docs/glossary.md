@@ -2,7 +2,7 @@
 
 Definitions for the vocabulary used across this repository — StelFlow's own terms and the Soroban-specific ones the design leans on. General blockchain vocabulary (wallet, transaction, fee) is assumed.
 
-Everything here describes the intended design. None of it is implemented.
+**Status: the contract is built, tested and live on [Stellar testnet](https://stellar.expert/explorer/testnet/contract/CBUWKI666QTSYUSPWNGWN6HIE3EB6NHDQ3BDCACAT2ADQFCOYU57NRL7). It has not been audited, and nothing is on mainnet.** The indexer and the Trustless Work integration are still unbuilt and are marked as such where they come up.
 
 > **The one to read first: [clawback](#clawback-issuer-sense) means two unrelated things in this project.** One is a sender recovering funds nobody has earned yet. The other is an asset issuer burning funds a recipient *has* earned. StelFlow guarantees the first cannot touch earned money; it cannot defend against the second at all. Both entries are below and each points at the other.
 
@@ -70,7 +70,7 @@ The signed 128-bit integer Soroban and [SEP-41](#sep-41) use for token balances,
 
 ### Indexer
 
-The planned off-chain service that ingests StelFlow's contract events and answers the historical queries a contract cannot — stream lists by participant, withdrawal timelines, approval audit trails. It is a cache, not an authority: if the indexer and the chain disagree, the chain is right, and no recipient ever needs it to get paid.
+The off-chain service — **specified but not built** — that would ingest StelFlow's contract events and answers the historical queries a contract cannot — stream lists by participant, withdrawal timelines, approval audit trails. It is a cache, not an authority: if the indexer and the chain disagree, the chain is right, and no recipient ever needs it to get paid.
 
 ### Instance storage
 

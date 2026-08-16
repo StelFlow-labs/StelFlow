@@ -1,11 +1,24 @@
 {
   "name": "stelflow",
   "private": true,
-  "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0",
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
-    "docs:lint": "markdownlint-cli2 \"**/*.md\""
+    "dev": "pnpm --filter @stelflow/web dev",
+    "build": "pnpm --filter @stelflow/web build",
+    "lint": "pnpm --filter @stelflow/web lint",
+    "typecheck": "pnpm --filter @stelflow/web typecheck",
+    "docs:lint": "markdownlint-cli2 \"**/*.md\"",
+    "contract:test": "cargo test --target aarch64-apple-darwin",
+    "contract:build": "stellar contract build",
+    "bindings": "node scripts/generate-bindings.mjs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
-    "markdownlint-cli2": "0.23.2"
+    "markdownlint-cli2": "0.23.2",
+    "vitepress": "1.6.4",
+    "vitepress-plugin-mermaid": "2.0.17",
+    "mermaid": "11.16.1"
   }
 }

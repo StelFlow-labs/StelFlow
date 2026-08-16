@@ -1,9 +1,25 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
+    <img src="assets/banner-light.svg" width="820"
+         alt="StelFlow — payment streaming with milestone gates, on Stellar. Testnet, non-upgradeable, unaudited.">
+  </picture>
+</p>
+
 # StelFlow
 
 StelFlow is a payment-streaming protocol for Stellar/Soroban: a sender locks a SEP-41 asset once, and the recipient's balance accrues continuously against Stellar ledger time instead of arriving as discrete transfers. Unlike a pure time-based stream, StelFlow can gate portions of a stream behind milestones, so funds keep accruing but stay unwithdrawable until a named approver verifies the condition.
 
-> **Status: early / in design.**
-> No contracts are written yet. There is no deployment, no audit, and no published contract address. This repository currently holds the design, the roadmap, and the contribution setup. Everything described below as "planned" is exactly that. If you are here to contribute, [CONTRIBUTING.md](CONTRIBUTING.md) is the place to start — design review and API critique are genuinely useful right now, more so than code.
+> **Status: working MVP on testnet. Unaudited.**
+>
+> The contract is written, tested, and **live on Stellar testnet** at
+> [`CC3XU5QB…Z7FO`](https://stellar.expert/explorer/testnet/contract/CBUWKI666QTSYUSPWNGWN6HIE3EB6NHDQ3BDCACAT2ADQFCOYU57NRL7),
+> with a dashboard that drives every entry point. 75 contract tests pass.
+>
+> **There has been no audit, and nothing is deployed to mainnet.** Do not put real
+> value in this. The contract is non-upgradeable by design, which means a bug in
+> it cannot be fixed — that raises the stakes on the audit that has not happened
+> yet. See [SECURITY.md](docs/SECURITY.md).
 
 ## Why this exists
 
@@ -21,9 +37,13 @@ Target uses: grant disbursement, DAO payroll, and vesting with cliffs — the ca
 
 ### What already exists on Stellar
 
-A few payment-streaming projects exist in the Soroban ecosystem, mostly hackathon-scale MVPs implementing linear time-based streaming. They demonstrate the primitive works. None of them, as far as we can tell, combine milestone gating, cancellation with clawback of unstreamed funds, and an escrow integration path — and none are audited or in production use.
+This section used to say that Soroban's streaming projects were "hackathon-scale MVPs". **That was wrong, and the survey that checked it is [docs/comparison.md](docs/comparison.md).**
 
-That's a claim that needs checking rather than asserting, so it's [an open issue](https://github.com/StelFlow-labs/StelFlow/issues) for a contributor to survey properly and write up honestly. If the survey finds something that already does this well, that's worth knowing before more is built, and the finding gets published either way.
+Two Soroban-native streaming projects — [StellarStream](https://github.com/StellarStream-HQ/StellarStream) and [stellar-stream](https://github.com/ritik4ever/stellar-stream) — are actively developed, both pushed within a week of the survey date and both carrying substantial contributor programmes. Neither is abandoned and neither deserved the description.
+
+What did hold up is narrower: **neither implements approver-gated milestones.** Both are time-based linear streaming with cancellation. Nor does [Sablier](https://docs.sablier.com/), the EVM reference — its "tranched" streams unlock on a clock, not on a signature, which is a different mechanism wearing a similar word.
+
+So the honest claim is one feature, not a category: StelFlow gates tranches behind a named approver, and nothing surveyed does. Everything else it does is well-trodden. The full table, including where StelFlow must *not* claim a win, is in [the survey](docs/comparison.md).
 
 ## Architecture
 
@@ -61,10 +81,10 @@ flowchart TB
     RPC -.->|"event stream"| IDX
 
     classDef planned stroke-dasharray: 5 5
-    class SC,IDX,SDK,UI,TW planned
+    class IDX,TW planned
 ```
 
-Dashed components are planned and unbuilt. [docs/architecture.md](docs/architecture.md) explains each one and why Soroban's constraints shape it the way they do.
+**Solid components are built and running on testnet.** Dashed ones are not: there is no indexer (the dashboard reads Stellar RPC's event log directly, which retains a rolling window rather than full history), and the Trustless Work integration is a design intention with no code and no conversation behind it. [docs/architecture.md](docs/architecture.md) explains each component and why Soroban's constraints shape it the way they do.
 
 ## Stack
 
@@ -74,44 +94,66 @@ Dashed components are planned and unbuilt. [docs/architecture.md](docs/architect
 | Assets | SEP-41 token interface | Works with the Stellar Asset Contract (SAC) and any SEP-41 token |
 | Tooling | Stellar CLI (`stellar`) | Formerly `soroban-cli`; `stellar contract build`, `stellar contract deploy` |
 | SDK | TypeScript + `@stellar/stellar-sdk` | Typed bindings generated from the contract spec |
-| Dashboard | React | <!-- TODO(maintainer): confirm framework — Next.js vs Vite — before the dashboard phase opens --> |
-| Indexer | <!-- TODO(maintainer): pick runtime + datastore (e.g. TypeScript + Postgres) and record it here --> | Ingests contract events via Stellar RPC |
+| Dashboard | Next.js 16 + Tailwind 4 | App Router, Stellar Wallets Kit for Freighter and friends |
+| Indexer | **not built** | The dashboard folds RPC's `getEvents` directly. [docs/indexer-design.md](docs/indexer-design.md) specifies the service for when that stops being enough |
 
 ## Docs
 
 - [docs/concepts.md](docs/concepts.md) — what money streaming and milestone-gating actually mean, from zero.
 - [docs/architecture.md](docs/architecture.md) — components, data flow, and the Soroban constraints that drive the design.
 - [docs/glossary.md](docs/glossary.md) — every term in one place. Start here if you landed mid-doc. Note that [clawback](docs/glossary.md#clawback-issuer-sense) means two different things in this project.
-- [ROADMAP.md](ROADMAP.md) — what gets built, in what order.
+- [ROADMAP.md](docs/ROADMAP.md) — what gets built, in what order.
 - [docs/faq.md](docs/faq.md) — short answers to what people actually ask, including the ones with uncomfortable answers: no, it isn't audited, and yes, an asset issuer with clawback enabled can reach a live stream.
+- [docs/behaviour.md](docs/behaviour.md) — the Given/When/Then specs, written before the code so the tests could not be shaped to fit it.
+- [docs/comparison.md](docs/comparison.md) — an honest survey of what else exists, including where this project's own README was wrong.
+- **Use cases**: [DAO payroll](docs/use-case-dao-payroll.md), [grant disbursement](docs/use-case-grant-disbursement.md), [vesting with cliffs](docs/use-case-vesting.md).
+- **Design decisions**: [threat model](docs/threat-model.md), [upgradeability and pause](docs/upgradeability-and-pause.md), [milestone revocation](docs/milestone-revocation.md), [milestone deadlines](docs/milestone-deadlines.md), [TTL strategy](docs/ttl-strategy.md).
 
 ## Quickstart
 
-> Nothing is implemented yet, so there is nothing to run. This section records the toolchain contributors will need and will grow into a real quickstart as Phase 1 lands. See [CONTRIBUTING.md](CONTRIBUTING.md#local-setup) for the full setup.
-
 ```bash
-# 1. Rust toolchain and the Wasm target
-rustup install stable
-rustup target add wasm32v1-none
+# 1. Toolchain
+rustup target add wasm32v1-none      # Rust 1.84+
+brew install stellar-cli             # or: cargo install --locked stellar-cli
+pnpm install
 
-# 2. Stellar CLI
-cargo install --locked stellar-cli
+# 2. Contract: 75 tests, then a Wasm build
+pnpm contract:test
+pnpm contract:build
 
-# 3. A funded testnet identity
-stellar keys generate --global alice --network testnet --fund
+# 3. Dashboard against the deployed testnet contract
+pnpm dev                             # http://localhost:3000
 
-# 4. Build and test the contracts  (planned — no crates in this repo yet)
-# stellar contract build
-# cargo test
+# 4. Docs site
+pnpm docs:dev
 ```
 
-The intended developer flow once Phase 1 exists: build the Wasm, deploy to testnet, create a stream, advance ledger time in tests, withdraw, and assert accrual matches the closed-form math. Nothing in that list works today.
+To use the dashboard you need [Freighter](https://www.freighter.app/) (or any wallet the kit
+supports) set to **testnet**, with a funded account:
+
+```bash
+stellar keys generate --global alice --network testnet --fund
+```
+
+Deploying your own instance instead of using the shared one:
+
+```bash
+stellar contract build
+stellar contract deploy \
+  --wasm target/wasm32v1-none/release/stelflow.wasm \
+  --source alice --network testnet \
+  -- --pauser "\"$(stellar keys address alice)\""
+```
+
+The pauser argument is a constructor parameter, so setup happens atomically with deployment — there
+is no `initialize` for someone else to call first. Pass `null` to deploy with no pauser at all.
+Then point `deployments.json` at the new contract id and run `pnpm bindings`.
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md). Short version: issues labeled `good first issue` are scoped to be finishable without reading the whole design; comment on one before you start so two people don't write it twice. Design feedback on `docs/` is welcome as an issue — at this stage a good argument against the storage layout is worth more than a PR.
+Read [CONTRIBUTING.md](docs/CONTRIBUTING.md). Short version: issues labeled `good first issue` are scoped to be finishable without reading the whole design; comment on one before you start so two people don't write it twice. Design feedback on `docs/` is welcome as an issue — at this stage a good argument against the storage layout is worth more than a PR.
 
-Contributors are credited in [CONTRIBUTORS.md](CONTRIBUTORS.md).
+Contributors are credited in [CONTRIBUTORS.md](docs/CONTRIBUTORS.md).
 
 ## Who's building this
 
@@ -121,7 +163,7 @@ Two things from that project carry directly into this one.
 
 The first is design experience: the accrual math, the cancellation semantics, and a withdrawal API that had to be redesigned once are lessons applied here rather than learned again.
 
-The second matters more if you're deciding whether to contribute. StackStream's security review was run as an open multi-auditor process — 11 independent contributors across four PRs and an issue thread, which found and fixed four real bugs including a missing recovery path and two griefing vectors. That review is [published in full](https://github.com/jayteemoney/stackstream/tree/main/audits), false positives and deferred findings included. StelFlow intends to work the same way, which is why the issues here are scoped with acceptance criteria and why [SECURITY.md](SECURITY.md) already describes a disclosure process for a project with nothing to disclose yet.
+The second matters more if you're deciding whether to contribute. StackStream's security review was run as an open multi-auditor process — 11 independent contributors across four PRs and an issue thread, which found and fixed four real bugs including a missing recovery path and two griefing vectors. That review is [published in full](https://github.com/jayteemoney/stackstream/tree/main/audits), false positives and deferred findings included. StelFlow intends to work the same way, which is why the issues here are scoped with acceptance criteria and why [SECURITY.md](docs/SECURITY.md) already describes a disclosure process for a project with nothing to disclose yet.
 
 StackStream is a separate codebase, not a preview of this one. Clarity and Rust/Soroban differ enough in storage model, fee model, and asset interface that porting was never on the table. Most of what makes StelFlow's design specific — the persistent-storage choice, TTL archival handling, the milestone cap forced by the per-transaction read budget — answers Soroban constraints that have no Stacks equivalent.
 

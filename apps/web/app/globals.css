@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+/*
+  StelFlow's surface.
+
+  The docs are deliberately plain — short sentences, no marketing language, a
+  status banner that says the thing isn't audited. The interface matches that:
+  restrained, technical, numbers first. Money figures are set in a tabular
+  monospace so digits line up column-wise and a changing balance doesn't make the
+  row jitter.
+
+  The three series colours are the validated categorical slots 1, 3 and 7 from
+  the data-viz reference palette, chosen for meaning rather than order —
+  withdrawn is settled, claimable is available, held is gated. Both modes were
+  validated with the palette checker: all six checks pass. Light-mode aqua sits
+  below 3:1 on the light surface, which obliges the relief rule — every meter
+  segment carries a visible direct label, so identity is never colour alone.
+*/
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
+
+:root {
+  color-scheme: light;
+
+  --surface-0: #f7f7f5;
+  --surface-1: #fcfcfb;
+  --surface-2: #f0f0ec;
+  --surface-3: #e4e4de;
+
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #83817a;
+
+  --border: #dedcd4;
+  --border-strong: #c7c5bb;
+
+  --series-withdrawn: #2a78d6;
+  --series-claimable: #1baf7a;
+  --series-held: #4a3aa7;
+
+  --status-good: #008300;
+  --status-warning: #eda100;
+  --status-critical: #e34948;
+
+  --focus: #2a78d6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --surface-0: #101010;
+    --surface-1: #1a1a19;
+    --surface-2: #222220;
+    --surface-3: #2e2e2b;
+
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8d8b81;
+
+    --border: #302f2c;
+    --border-strong: #43413c;
+
+    --series-withdrawn: #3987e5;
+    --series-claimable: #199e70;
+    --series-held: #9085e9;
+
+    --status-good: #35b135;
+    --status-warning: #c98500;
+    --status-critical: #e66767;
+
+    --focus: #3987e5;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface-0: #101010;
+  --surface-1: #1a1a19;
+  --surface-2: #222220;
+  --surface-3: #2e2e2b;
+
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #8d8b81;
+
+  --border: #302f2c;
+  --border-strong: #43413c;
+
+  --series-withdrawn: #3987e5;
+  --series-claimable: #199e70;
+  --series-held: #9085e9;
+
+  --status-good: #35b135;
+  --status-warning: #c98500;
+  --status-critical: #e66767;
+
+  --focus: #3987e5;
+}
+
+@theme inline {
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--text-primary);
+  --color-ink-secondary: var(--text-secondary);
+  --color-ink-muted: var(--text-muted);
+  --color-edge: var(--border);
+  --color-edge-strong: var(--border-strong);
+  --color-withdrawn: var(--series-withdrawn);
+  --color-claimable: var(--series-claimable);
+  --color-held: var(--series-held);
+  --color-good: var(--status-good);
+  --color-warning: var(--status-warning);
+  --color-critical: var(--status-critical);
+}
+
+html {
+  background: var(--surface-0);
+}
+
+body {
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Money and identifiers. Tabular figures stop a live balance from reflowing its
+   own row every second as digit widths change. */
+.tnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

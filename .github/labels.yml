@@ -1,0 +1,107 @@
+# StelFlow label taxonomy.
+#
+# Four namespaces, applied in this order of usefulness: `area:` on everything,
+# `type:` on everything, `status:` only when it says something the issue state
+# does not, and `difficulty:` only on issues genuinely open to newcomers.
+#
+# The rule that keeps this usable: **a label nobody can apply consistently is
+# worse than no label**. Every entry below has a stated test for when it applies.
+# If you find yourself hesitating between two, the taxonomy is wrong — open an
+# issue rather than guessing.
+#
+# Apply with:  gh label create --file .github/labels.yml   (or the sync action)
+
+# ---------------------------------------------------------------------------
+# area: — which part of the system. Exactly one per issue.
+# ---------------------------------------------------------------------------
+
+- name: "area: contract"
+  color: "0B5FFF"
+  description: "Soroban contract — accrual, storage, authorization, events"
+
+- name: "area: web"
+  color: "1F6FEB"
+  description: "Next.js dashboard and anything it renders"
+
+- name: "area: sdk"
+  color: "3B82F6"
+  description: "Generated bindings and the TypeScript client surface"
+
+- name: "area: indexer"
+  color: "60A5FA"
+  description: "Off-chain event ingestion — not built yet, see docs/indexer-design.md"
+
+- name: "area: docs"
+  color: "8B949E"
+  description: "Anything under docs/, plus README"
+
+- name: "area: tooling"
+  color: "6E7681"
+  description: "CI, build, linting, developer setup"
+
+# ---------------------------------------------------------------------------
+# type: — what kind of work. Exactly one per issue.
+# ---------------------------------------------------------------------------
+
+- name: "type: bug"
+  color: "D1242F"
+  description: "Something behaves differently from what the docs or tests say"
+
+- name: "type: feature"
+  color: "0E8A16"
+  description: "New capability that does not exist today"
+
+- name: "type: research"
+  color: "A371F7"
+  description: "Produces a written finding, not code. Cite sources."
+
+- name: "type: security"
+  color: "B60205"
+  description: "Threat model, invariants, or anything that can strand or lose funds"
+
+- name: "type: chore"
+  color: "586069"
+  description: "Maintenance with no behaviour change"
+
+# ---------------------------------------------------------------------------
+# status: — apply only when it tells a reader something the open/closed state
+# does not. An ordinary open issue needs none of these.
+# ---------------------------------------------------------------------------
+
+- name: "status: needs-design"
+  color: "FBCA04"
+  description: "Cannot be implemented until a decision is written down"
+
+- name: "status: blocked"
+  color: "E99695"
+  description: "Waiting on another issue or an external dependency. Say which in a comment."
+
+- name: "status: ready"
+  color: "0E8A16"
+  description: "Scope is settled and someone could start today"
+
+- name: "status: in-progress"
+  color: "1D76DB"
+  description: "Someone is actively on it. Assign yourself when you add this."
+
+# ---------------------------------------------------------------------------
+# difficulty: — one tier, not a ladder.
+#
+# `good first issue` is kept because GitHub surfaces it in its own discovery
+# UI, which a custom `difficulty:` label does not. Rather than run both
+# schemes, there is exactly one tier above it. Three tiers would need a
+# consistent boundary between "medium" and "hard", and nobody applies that
+# consistently — including me.
+# ---------------------------------------------------------------------------
+
+- name: "good first issue"
+  color: "7057FF"
+  description: "Self-contained, no prior context needed, reviewer will help"
+
+- name: "deep dive"
+  color: "5319E7"
+  description: "Needs real context on the design. Read the linked docs before starting."
+
+- name: "help wanted"
+  color: "008672"
+  description: "Maintainer is not working on this and would welcome someone who is"

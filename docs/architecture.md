@@ -1,6 +1,6 @@
 # Architecture
 
-This describes the intended system and the reasoning behind it. **None of it is implemented.** Where a number or an interface is still undecided, there is a TODO rather than a guess.
+This describes the system and the reasoning behind it. **Status: the contract is built, tested and live on [Stellar testnet](https://stellar.expert/explorer/testnet/contract/CBUWKI666QTSYUSPWNGWN6HIE3EB6NHDQ3BDCACAT2ADQFCOYU57NRL7). It has not been audited, and nothing is on mainnet.** The indexer and the Trustless Work integration are still unbuilt and are marked as such where they come up. Where a number or an interface is still undecided, there is a TODO rather than a guess.
 
 Read [concepts.md](concepts.md) first if "streamed vs. claimable" isn't already obvious to you. [glossary.md](glossary.md) defines the Soroban-specific vocabulary this page uses.
 
@@ -8,7 +8,7 @@ Read [concepts.md](concepts.md) first if "streamed vs. claimable" isn't already 
 
 Four pieces. Only the first one is trusted.
 
-### 1. StelFlow Core (Soroban contract, Rust) — planned
+### 1. StelFlow Core (Soroban contract, Rust) — built
 
 Holds custody, owns the accrual math, and is the only component that can move money. Everything else is a view of it.
 
@@ -32,11 +32,11 @@ The [indexer](glossary.md#indexer) subscribes to StelFlow's contract events via 
 
 It is a cache, not an authority. If the indexer and the chain disagree, the chain is right. The dashboard must be able to show a stream's current claimable balance without the indexer being up — that number comes from simulating a contract read, not from the database.
 
-Runtime and datastore: a Node/TypeScript poller against `getEvents` (RPC exposes no push/subscription channel, so polling is the only option, not a choice), writing an append-only, `event_id`-deduped event log to PostgreSQL, with all other tables derived from it by a pure fold so a wipe-and-replay reaches identical state. The RPC event-retention backstop is Galexie-backed self-hosted backfill, with Hubble as a fast one-off cold-start path. Full reasoning, the cursor/checkpoint mechanics, and the schema are in [docs/research/indexer-design.md](research/indexer-design.md).
+Runtime and datastore: a Node/TypeScript poller against `getEvents` (RPC exposes no push/subscription channel, so polling is the only option, not a choice), writing an append-only, `event_id`-deduped event log to PostgreSQL, with all other tables derived from it by a pure fold so a wipe-and-replay reaches identical state. The RPC event-retention backstop is Galexie-backed self-hosted backfill, with Hubble as a fast one-off cold-start path. Full reasoning, the cursor/checkpoint mechanics, and the schema are in [docs/research/indexer-design.md](indexer-design.md).
 
 <!-- TODO(maintainer): the mechanism above is decided; what's still open is the tunable numbers — confirmation depth (CONFIRMATION_LEDGERS), poll interval, and reconciliation-job interval. Those need measurement against a real deployment, not a guess, per docs/research/indexer-design.md#11-what-this-doesnt-settle. -->
 
-### 3. TypeScript SDK — planned
+### 3. TypeScript SDK — generated
 
 The layer application developers actually touch. Typed bindings generated from the contract spec, plus the things raw bindings don't give you:
 
@@ -44,7 +44,7 @@ The layer application developers actually touch. Typed bindings generated from t
 - **Transaction assembly** — build, simulate, and submit, with the auth entries a withdrawal needs.
 - **Indexer client** for history.
 
-### 4. React dashboard — planned
+### 4. Dashboard — built
 
 Create streams, watch them accrue, withdraw, approve milestones, cancel. Three views because there are three roles: sender, recipient, approver.
 
@@ -147,7 +147,7 @@ The real design pressure is that persistent entries still have a TTL and streams
 - The SDK must detect an archived entry and produce a restore-then-withdraw flow, not a confusing "stream not found." This is the single most likely source of bad UX in the project and it needs to be handled in the SDK, not left to the app developer.
 - A `bump_stream` entry point lets anyone extend any stream's TTL, so a sender or a watcher service can keep a dormant stream hot without the recipient acting — but StelFlow itself doesn't operate one; see the research doc for why that's a deliberate scope line, not an oversight.
 
-Mechanism resolved in [docs/research/ttl-strategy.md](research/ttl-strategy.md), including live-checked network numbers and concrete SDK guidance for the restore-then-withdraw flow.
+Mechanism resolved in [docs/research/ttl-strategy.md](ttl-strategy.md), including live-checked network numbers and concrete SDK guidance for the restore-then-withdraw flow.
 
 <!-- TODO(maintainer): the mechanism above is decided; what's still open is the exact numeric thresholds (extend_to / threshold ledgers, and the creation-time multiple of cliff duration). That needs measurement against real footprint sizes once the stream struct exists — do it alongside the MAX_MILESTONES_PER_STREAM measurement in the read-budget section below, not before. -->
 
@@ -175,13 +175,13 @@ What it costs, and what the contract must not assume:
 - **SEP-41 is still a Draft SEP.** It's stable in practice and the SAC implements it, but the contract should depend only on the functions it actually calls (`transfer`, `transfer_from`, `balance`, `decimals`) rather than the full surface.
 - **[Issuer clawback](glossary.md#clawback-issuer-sense) is out of scope and cannot be defended against.** The power is the [SAC](glossary.md#stellar-asset-contract-sac)'s admin `clawback` rather than anything SEP-41 defines, so it rides on the asset, not on the interface: if the issuer enabled clawback, they can remove funds the contract is holding for a live stream. The contract should not pretend its stored `total` is a guarantee — `balance` is the truth. The dashboard should warn when a stream's asset has clawback enabled. This is a disclosure problem, not a code problem.
 - **Decimals are the asset's, not ours.** All internal math is in the asset's smallest unit. Human-readable formatting happens in the SDK, never in the contract.
-- **Non-standard transfer behavior breaks accrual accounting.** A fee-on-transfer or rebasing token would leave the contract holding less than the stream promises. **Decided: `create_stream` measures rather than trusts.** It reads the contract's own balance either side of the `transfer_from` and stores the observed delta as `total`, so the stored figure is true by construction for any asset and value conservation holds without depending on the token behaving. The cost is one extra balance read at creation. This fixes fee-on-transfer completely. It does not fix *rebasing*, because no creation-time measurement can bind a balance that moves afterwards — rebasing assets are unsupported, and the rule that `balance` is the truth rather than the stored `total` is what limits the damage. See [threat-model T4](research/threat-model.md#t4--non-standard-tokens-produce-under-funded-streams).
+- **Non-standard transfer behavior breaks accrual accounting.** A fee-on-transfer or rebasing token would leave the contract holding less than the stream promises. **Decided: `create_stream` measures rather than trusts.** It reads the contract's own balance either side of the `transfer_from` and stores the observed delta as `total`, so the stored figure is true by construction for any asset and value conservation holds without depending on the token behaving. The cost is one extra balance read at creation. This fixes fee-on-transfer completely. It does not fix *rebasing*, because no creation-time measurement can bind a balance that moves afterwards — rebasing assets are unsupported, and the rule that `balance` is the truth rather than the stored `total` is what limits the damage. See [threat-model T4](threat-model.md#t4--non-standard-tokens-produce-under-funded-streams).
 
 ### Authorization
 
 Every privileged entry point calls `require_auth` on the address that should be authorizing it — sender for `create_stream`, recipient for `withdraw`, approver for `approve_milestone`. Roles are stored per stream. This also means an approver can be a contract address, which is how a Trustless Work escrow can act as the approver for a milestone.
 
-`cancel` is the one entry point whose authorization depends on the stream: with `cancelable = true` the sender alone authorizes; with `cancelable = false` **both the sender and the recipient must authorize**, which is the only way funds move on a stream the sender cannot stop unilaterally. Settlement is identical either way — [cancellation rules 1–4](concepts.md#cancellation-and-clawback) are unchanged. This exists so that a non-cancelable stream is not a permanent dead end when the contract needs migrating or an approver never returns; see [research/upgradeability-and-pause.md](research/upgradeability-and-pause.md#the-fix-cancel-by-unanimous-consent).
+`cancel` is the one entry point whose authorization depends on the stream: with `cancelable = true` the sender alone authorizes; with `cancelable = false` **both the sender and the recipient must authorize**, which is the only way funds move on a stream the sender cannot stop unilaterally. Settlement is identical either way — [cancellation rules 1–4](concepts.md#cancellation-and-clawback) are unchanged. This exists so that a non-cancelable stream is not a permanent dead end when the contract needs migrating or an approver never returns; see [research/upgradeability-and-pause.md](upgradeability-and-pause.md#the-fix-cancel-by-unanimous-consent).
 
 **On global roles.** There is no admin with any power over funds in an existing stream — no upgrade key (the contract is non-upgradeable, per [open question 4](#open-questions)), no ability to move, redirect, freeze, or reassign a stream. One global role exists: the **pauser**, whose single power is to stop `create_stream`, and which auto-expires and can be renounced. It cannot touch a stream that already exists. Every payout additionally asserts `payout <= total - withdrawn` for that stream, so no stream's lifetime extraction can reach a neighbour's deposit out of the contract's pooled balance.
 
@@ -198,15 +198,15 @@ The intended split: Trustless Work decides *whether* a condition is met; StelFlo
 Answers wanted. These are good places to argue with the design — open an issue.
 
 1. **Stream IDs.** Monotonic `u64` counter, or a hash of the creation parameters? A counter needs a writable global entry on every creation, which is a write-contention point. A hash is contention-free but unfriendly to read.
-2. ~~**Milestone revocation.**~~ **Settled: no.** Milestone state is monotonic and `Met` is terminal. Re-locking a tranche after a withdrawal has settled would charge the shortfall against the recipient's *other* tranches, because `withdrawn` is one stream-wide counter — worked through in [research/milestone-revocation.md](research/milestone-revocation.md). Storage consequence recorded under [Storage type and TTL](#storage-type-and-ttl).
+2. ~~**Milestone revocation.**~~ **Settled: no.** Milestone state is monotonic and `Met` is terminal. Re-locking a tranche after a withdrawal has settled would charge the shortfall against the recipient's *other* tranches, because `withdrawn` is one stream-wide counter — worked through in [research/milestone-revocation.md](milestone-revocation.md). Storage consequence recorded under [Storage type and TTL](#storage-type-and-ttl).
 3. **Multiple recipients per stream.** Splitting a stream N ways is a real payroll need, but it multiplies the per-transaction entry cost. Probably out of scope for v1 — argue otherwise if you disagree.
-4. ~~**Upgradeability.**~~ **Settled: non-upgradeable.** The contract has no upgrade function, so there is no upgrade key to hold, compromise, or be coerced into using. The timelocked-upgrade alternative was rejected on arithmetic rather than principle: a timelock only protects what a user can withdraw during it, and a stream's whole purpose is that most of the money isn't withdrawable yet — a 30-day timelock rescues 2.1% of a four-year vest if the attacker announces early. Worked through in [research/upgradeability-and-pause.md](research/upgradeability-and-pause.md).
+4. ~~**Upgradeability.**~~ **Settled: non-upgradeable.** The contract has no upgrade function, so there is no upgrade key to hold, compromise, or be coerced into using. The timelocked-upgrade alternative was rejected on arithmetic rather than principle: a timelock only protects what a user can withdraw during it, and a stream's whole purpose is that most of the money isn't withdrawable yet — a 30-day timelock rescues 2.1% of a four-year vest if the attacker announces early. Worked through in [research/upgradeability-and-pause.md](upgradeability-and-pause.md).
 5. ~~**Pausing.**~~ **Settled: `create_stream` only.** `withdraw`, `cancel`, `approve_milestone`, and TTL extension are never pausable, so a pause can never reach a stream that already exists. The pause auto-expires after 30 days and can be renounced permanently — both because a non-upgradeable contract can never correct a stuck one. The strongest case for pausing withdrawals (the contract's token balance is pooled, so an accrual bug could let one stream drain another's deposit) is answered by a per-stream solvency assertion instead — same file.
 
 ## Next
 
 - [glossary.md](glossary.md) — definitions for the vocabulary on this page.
-- [specs/behaviour.md](specs/behaviour.md) — Given/When/Then scenarios for the four entry points, plus the pause's scope and the per-stream solvency assertion.
-- [research/upgradeability-and-pause.md](research/upgradeability-and-pause.md) — why open questions 4 and 5 were settled by removing capabilities rather than guarding them.
-- [../ROADMAP.md](../ROADMAP.md) — build order.
-- [../CONTRIBUTING.md](../CONTRIBUTING.md) — how to pick something up.
+- [specs/behaviour.md](behaviour.md) — Given/When/Then scenarios for the four entry points, plus the pause's scope and the per-stream solvency assertion.
+- [research/upgradeability-and-pause.md](upgradeability-and-pause.md) — why open questions 4 and 5 were settled by removing capabilities rather than guarding them.
+- [../ROADMAP.md](ROADMAP.md) — build order.
+- [../CONTRIBUTING.md](CONTRIBUTING.md) — how to pick something up.

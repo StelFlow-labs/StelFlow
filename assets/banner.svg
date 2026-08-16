@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300"
+     role="img" aria-label="StelFlow — payment streaming with milestone gates, on Stellar">
+  <title>StelFlow — payment streaming with milestone gates, on Stellar</title>
+  <!--
+    Theme-independent by construction: every element is drawn in currentColor
+    against a transparent ground, so GitHub's light and dark READMEs both render
+    it correctly from one file. No <picture> element, no second export to keep
+    in sync.
+
+    The type is set in the same system stack the docs render in, and the visual
+    idea is the same as the logo — a stream is a line, a gate is the thing that
+    interrupts one tranche of it and nothing else.
+  -->
+  <style>
+    .wordmark {
+      font: 600 76px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+            "Helvetica Neue", Arial, sans-serif;
+      letter-spacing: -0.02em;
+    }
+    .tagline {
+      font: 400 26px ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+            "Liberation Mono", monospace;
+      letter-spacing: 0.01em;
+      opacity: 0.62;
+    }
+    .status {
+      font: 400 20px ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+            "Liberation Mono", monospace;
+      opacity: 0.45;
+    }
+  </style>
+
+  <!-- Mark, scaled from the 64-unit logo grid. -->
+  <g transform="translate(80 106) scale(1.38)" fill="none" stroke="currentColor"
+     stroke-width="6" stroke-linecap="round">
+    <path d="M10 18 H54" opacity="0.9" />
+    <path d="M10 32 H26" />
+    <path d="M42 32 H54" opacity="0.35" />
+    <path d="M10 46 H54" opacity="0.9" />
+    <path d="M34 22 V42" />
+  </g>
+
+  <text class="wordmark" x="204" y="150" fill="currentColor">StelFlow</text>
+  <text class="tagline" x="208" y="192" fill="currentColor">
+    payment streaming with milestone gates, on Stellar
+  </text>
+  <text class="status" x="208" y="228" fill="currentColor">
+    testnet · non-upgradeable · unaudited
+  </text>
+
+  <!--
+    A hairline stream running the full width, interrupted once. Same idea as the
+    mark, at banner scale — and the interruption sits under the word "gates".
+  -->
+  <g stroke="currentColor" stroke-width="2" opacity="0.22" stroke-linecap="round">
+    <path d="M80 268 H612" />
+    <path d="M660 268 H1120" />
+  </g>
+  <path d="M636 254 V282" stroke="currentColor" stroke-width="2" opacity="0.5"
+        stroke-linecap="round" />
+</svg>

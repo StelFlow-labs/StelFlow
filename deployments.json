@@ -1,0 +1,38 @@
+{
+  "$comment": [
+    "Deployed contract addresses. This file is the single source of truth for",
+    "what is live, and is read by the web app at build time.",
+    "",
+    "The contract is non-upgradeable by design, so a new version is always a new",
+    "address rather than new code at the same one. Superseded entries stay in",
+    "'history' rather than being deleted: streams created against an old address",
+    "keep running there, and their holders need to be able to find it."
+  ],
+  "testnet": {
+    "contractId": "CBUWKI666QTSYUSPWNGWN6HIE3EB6NHDQ3BDCACAT2ADQFCOYU57NRL7",
+    "wasmHash": "303abd3c00ab86dc5cdfdace6cad6580a769639ca2d82d736e9319a654523fdc",
+    "networkPassphrase": "Test SDF Network ; September 2015",
+    "rpcUrl": "https://soroban-testnet.stellar.org",
+    "nativeAssetContract": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+    "deployedAt": "2026-08-16",
+    "explorer": "https://stellar.expert/explorer/testnet/contract/CBUWKI666QTSYUSPWNGWN6HIE3EB6NHDQ3BDCACAT2ADQFCOYU57NRL7"
+  },
+  "mainnet": null,
+  "history": [
+    {
+      "network": "testnet",
+      "contractId": "CAOIDNZEHAAWRVVCM63PUYH2MO3JIYI5XWQ5E55S7SRH2NL2UXZRVRLY",
+      "superseded": "Setup used a callable `initialize`, leaving a window in which anyone could claim the pauser role permanently. Replaced by a `__constructor` that runs inside the deploy transaction. Never initialized; holds no funds."
+    },
+    {
+      "network": "testnet",
+      "contractId": "CBVJPKN2F4HSBYMHFZ2OYECTIQR4KQJPMCURMWRVYCQI7ZHGK2NUHZUF",
+      "superseded": "`create_stream` took a full Milestone, so callers had to pass a `state` field that could only legally be Unmet. Replaced by MilestoneSpec, which has no such field. Holds no funds."
+    },
+    {
+      "network": "testnet",
+      "contractId": "CC3XU5QBQE4HSZGIBKV72AHMWFV6756AWRBH7A23FSFOXUG6YE65Z7FO",
+      "superseded": "The TTL-extension entry point was named `touch`, but the design docs specify `bump_stream` throughout and were written first. Renamed so the implementation matches its own specification rather than the other way round. Holds one settled test stream; no live value."
+    }
+  ]
+}
