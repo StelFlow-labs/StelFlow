@@ -16,8 +16,8 @@ export function ActivityFeed({
   return (
     <Card>
       <CardHeader
-        title="Activity"
-        hint="Folded from contract events. RPC keeps a rolling window, so this is recent activity rather than full history."
+        title="What has happened"
+        hint="Recent events from the contract itself. Older history drops off as the network recycles it."
       />
       {loading && activity.length === 0 ? (
         <div className="space-y-3 px-5 py-4">
@@ -27,7 +27,7 @@ export function ActivityFeed({
         </div>
       ) : activity.length === 0 ? (
         <EmptyState title="Nothing yet">
-          Create a stream and its events will appear here.
+          Start a stream and you will see it appear here.
         </EmptyState>
       ) : (
         <ul className="divide-y divide-edge">
@@ -39,10 +39,10 @@ export function ActivityFeed({
                 className="flex items-start justify-between gap-3 px-5 py-3"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-xs text-ink-secondary">
+                  <p className="truncate text-xs text-ink-2">
                     {describeActivity(event)}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-ink-muted">
+                  <p className="mt-0.5 text-[11px] text-ink-3">
                     {event.streamId !== undefined ? (
                       <span className="tnum">#{event.streamId.toString()} · </span>
                     ) : null}
@@ -51,7 +51,7 @@ export function ActivityFeed({
                   </p>
                 </div>
                 {amount !== null ? (
-                  <span className="tnum shrink-0 text-xs text-ink-secondary">
+                  <span className="tnum shrink-0 text-xs text-ink-2">
                     {formatAmount(amount, { maxDecimals: 4 })}
                   </span>
                 ) : null}

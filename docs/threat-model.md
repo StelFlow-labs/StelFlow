@@ -446,11 +446,14 @@ Stated plainly, because a threat model where everything is mitigated is a threat
 finished:
 
 1. **Issuer clawback (T7).** Unfixable by any contract. Accepted permanently, mitigated only by
-   disclosure. If you stream a clawback-enabled asset, the issuer is a trusted party whether you
-   like it or not.
+   disclosure — **now implemented** (#40): the dashboard resolves the asset's issuer and reports
+   whether clawback is enabled *before* anything is escrowed, with an explicit "we could not check"
+   state rather than a silent pass when the lookup fails. If you stream a clawback-enabled asset,
+   the issuer is a trusted party whether you like it or not, and now you are told so.
 2. **Sender-controlled approvers (T6).** Accepted as a consequence of the counterparty model.
-   Mitigated by disclosure in the SDK and dashboard — which means the acceptance is only honest once
-   that disclosure exists.
+   Mitigated by disclosure — and **that disclosure now exists**: the dashboard warns inline when a
+   milestone's approver is the sender, before the deposit is escrowed, and every stream shows
+   approver identity in its detail panel. The acceptance is honest as of #40.
 3. **Dust-stream griefing (T10).** Accepted at the contract level. The attacker pays; the victim
    ignores.
 4. **Residual archival cost (T8).** Accepted. Rent is a network property, and the recipient's
@@ -477,8 +480,10 @@ Collected so they can be argued with individually:
 7. **Assert `payout <= total - withdrawn` per stream** on `withdraw` and `cancel` (T5). The contract's
    token balance is pooled; this is what stops one stream's accrual bug reaching another's deposit,
    and it is the reason a withdrawal pause isn't needed.
-8. **SDK and dashboard must surface approver identity, gated fraction, clawback flag, and estimated
-   restore cost** (T6, T7, T8).
+8. ~~**SDK and dashboard must surface approver identity, gated fraction, clawback flag, and estimated
+   restore cost** (T6, T7, T8).~~ **Mostly done** — decided and built in #40. Approver identity,
+   gated fraction and the clawback flag are all surfaced before signing. Estimated restore cost
+   (T8) is still missing, and needs the archival work to exist first.
 
 ## What this model doesn't cover
 

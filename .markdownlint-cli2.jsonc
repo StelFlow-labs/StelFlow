@@ -35,7 +35,7 @@
     // disappears on GitHub's dark theme — the two-asset + prefers-color-scheme route is the only
     // one that works, and it is what issue #10 asks for. This allowlist is exactly the elements
     // that needs and nothing more, so stray HTML elsewhere in the prose is still caught.
-    "MD033": { "allowed_elements": ["p", "picture", "source", "img"] },
+    "MD033": { "allowed_elements": ["p", "picture", "source", "img", "a"] },
 
     // Follows from the same banner: the README's first line is that <picture> block rather than
     // the H1, which sits directly beneath it.

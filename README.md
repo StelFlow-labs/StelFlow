@@ -6,6 +6,10 @@
   </picture>
 </p>
 
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.es.md">Español</a>
+</p>
+
 # StelFlow
 
 StelFlow is a payment-streaming protocol for Stellar/Soroban: a sender locks a SEP-41 asset once, and the recipient's balance accrues continuously against Stellar ledger time instead of arriving as discrete transfers. Unlike a pure time-based stream, StelFlow can gate portions of a stream behind milestones, so funds keep accruing but stay unwithdrawable until a named approver verifies the condition.
@@ -13,7 +17,7 @@ StelFlow is a payment-streaming protocol for Stellar/Soroban: a sender locks a S
 > **Status: working MVP on testnet. Unaudited.**
 >
 > The contract is written, tested, and **live on Stellar testnet** at
-> [`CC3XU5QB…Z7FO`](https://stellar.expert/explorer/testnet/contract/CBUWKI666QTSYUSPWNGWN6HIE3EB6NHDQ3BDCACAT2ADQFCOYU57NRL7),
+> [`CBUWKI66…NRL7`](https://stellar.expert/explorer/testnet/contract/CBUWKI666QTSYUSPWNGWN6HIE3EB6NHDQ3BDCACAT2ADQFCOYU57NRL7),
 > with a dashboard that drives every entry point. 75 contract tests pass.
 >
 > **There has been no audit, and nothing is deployed to mainnet.** Do not put real

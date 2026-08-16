@@ -28,9 +28,9 @@ import type { Stream } from "@/lib/contract";
 import { depositBreakdown } from "@/lib/stream";
 
 const SERIES = [
-  { key: "withdrawn", label: "Withdrawn", color: "var(--series-withdrawn)" },
-  { key: "claimable", label: "Claimable", color: "var(--series-claimable)" },
-  { key: "held", label: "Held", color: "var(--series-held)" },
+  { key: "withdrawn", label: "Taken", color: "var(--withdrawn)" },
+  { key: "claimable", label: "Ready", color: "var(--claimable)" },
+  { key: "held", label: "Held", color: "var(--held)" },
 ] as const;
 
 export function DepositMeter({
@@ -86,8 +86,8 @@ export function DepositMeter({
                 className="size-2 shrink-0 rounded-[2px]"
                 style={{ background: color }}
               />
-              <span className="text-ink-muted">{label}</span>
-              <span className="tnum text-ink-secondary">
+              <span className="text-ink-3">{label}</span>
+              <span className="tnum text-ink-2">
                 {percent(parts[key], 0)}
               </span>
             </span>
@@ -103,12 +103,12 @@ export function DepositMeter({
                 it went back to the sender when accrual froze. Labelling it
                 "Unstreamed" would imply money still on its way to the recipient.
               */}
-              <span className="text-ink-muted">
+              <span className="text-ink-3">
                 {stream.canceled_at === undefined
-                  ? "Unstreamed"
-                  : "Returned to sender"}
+                  ? "Still to come"
+                  : "Back with the sender"}
               </span>
-              <span className="tnum text-ink-secondary">
+              <span className="tnum text-ink-2">
                 {percent(parts.remaining, 0)}
               </span>
             </span>

@@ -1,22 +1,5 @@
 @import "tailwindcss";
 
-/*
-  StelFlow's surface.
-
-  The docs are deliberately plain — short sentences, no marketing language, a
-  status banner that says the thing isn't audited. The interface matches that:
-  restrained, technical, numbers first. Money figures are set in a tabular
-  monospace so digits line up column-wise and a changing balance doesn't make the
-  row jitter.
-
-  The three series colours are the validated categorical slots 1, 3 and 7 from
-  the data-viz reference palette, chosen for meaning rather than order —
-  withdrawn is settled, claimable is available, held is gated. Both modes were
-  validated with the palette checker: all six checks pass. Light-mode aqua sits
-  below 3:1 on the light surface, which obliges the relief rule — every meter
-  segment carries a visible direct label, so identity is never colour alone.
-*/
-
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
@@ -24,84 +7,103 @@
     "Liberation Mono", monospace;
 }
 
+/*
+  The three series colours are validated categorical slots — all six checks of
+  the data-viz palette validator pass in both modes. Light-mode aqua sits below
+  3:1 on the light surface, so every chart segment carries a direct label.
+  Amber is the brand accent only: it never encodes data.
+*/
 :root {
   color-scheme: light;
 
-  --surface-0: #f7f7f5;
-  --surface-1: #fcfcfb;
-  --surface-2: #f0f0ec;
-  --surface-3: #e4e4de;
+  --surface-0: #faf9f7;
+  --surface-1: #ffffff;
+  --surface-2: #f2f1ed;
+  --surface-3: #e5e3dc;
 
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted: #83817a;
+  --ink: #14130f;
+  --ink-2: #4a483f;
+  --ink-3: #7c7a6f;
 
-  --border: #dedcd4;
-  --border-strong: #c7c5bb;
+  --edge: #e2e0d8;
+  --edge-2: #cbc8bc;
 
-  --series-withdrawn: #2a78d6;
-  --series-claimable: #1baf7a;
-  --series-held: #4a3aa7;
+  --brand: #b4780c;
+  --brand-ink: #ffffff;
+  --brand-soft: #fdf4e3;
 
-  --status-good: #008300;
-  --status-warning: #eda100;
-  --status-critical: #e34948;
+  --withdrawn: #2a78d6;
+  --claimable: #1baf7a;
+  --held: #4a3aa7;
 
-  --focus: #2a78d6;
+  --good: #008300;
+  --warn: #b4780c;
+  --bad: #d1242f;
+
+  --glow: 0 1px 2px rgb(20 19 15 / 0.05), 0 8px 24px -12px rgb(20 19 15 / 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --surface-0: #101010;
-    --surface-1: #1a1a19;
-    --surface-2: #222220;
-    --surface-3: #2e2e2b;
+    --surface-0: #0c0c0b;
+    --surface-1: #141413;
+    --surface-2: #1c1c1a;
+    --surface-3: #292926;
 
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #8d8b81;
+    --ink: #f7f7f5;
+    --ink-2: #b8b6ac;
+    --ink-3: #85837a;
 
-    --border: #302f2c;
-    --border-strong: #43413c;
+    --edge: #26262300;
+    --edge: #262623;
+    --edge-2: #3a3a35;
 
-    --series-withdrawn: #3987e5;
-    --series-claimable: #199e70;
-    --series-held: #9085e9;
+    --brand: #e8a838;
+    --brand-ink: #14130f;
+    --brand-soft: #241c0c;
 
-    --status-good: #35b135;
-    --status-warning: #c98500;
-    --status-critical: #e66767;
+    --withdrawn: #3987e5;
+    --claimable: #199e70;
+    --held: #9085e9;
 
-    --focus: #3987e5;
+    --good: #35b135;
+    --warn: #e8a838;
+    --bad: #e66767;
+
+    --glow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 32px -12px rgb(0 0 0 / 0.6);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --surface-0: #101010;
-  --surface-1: #1a1a19;
-  --surface-2: #222220;
-  --surface-3: #2e2e2b;
+  --surface-0: #0c0c0b;
+  --surface-1: #141413;
+  --surface-2: #1c1c1a;
+  --surface-3: #292926;
 
-  --text-primary: #ffffff;
-  --text-secondary: #c3c2b7;
-  --text-muted: #8d8b81;
+  --ink: #f7f7f5;
+  --ink-2: #b8b6ac;
+  --ink-3: #85837a;
 
-  --border: #302f2c;
-  --border-strong: #43413c;
+  --edge: #262623;
+  --edge-2: #3a3a35;
 
-  --series-withdrawn: #3987e5;
-  --series-claimable: #199e70;
-  --series-held: #9085e9;
+  --brand: #e8a838;
+  --brand-ink: #14130f;
+  --brand-soft: #241c0c;
 
-  --status-good: #35b135;
-  --status-warning: #c98500;
-  --status-critical: #e66767;
+  --withdrawn: #3987e5;
+  --claimable: #199e70;
+  --held: #9085e9;
 
-  --focus: #3987e5;
+  --good: #35b135;
+  --warn: #e8a838;
+  --bad: #e66767;
+
+  --glow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 32px -12px rgb(0 0 0 / 0.6);
 }
 
 @theme inline {
@@ -109,28 +111,33 @@
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
-  --color-ink: var(--text-primary);
-  --color-ink-secondary: var(--text-secondary);
-  --color-ink-muted: var(--text-muted);
-  --color-edge: var(--border);
-  --color-edge-strong: var(--border-strong);
-  --color-withdrawn: var(--series-withdrawn);
-  --color-claimable: var(--series-claimable);
-  --color-held: var(--series-held);
-  --color-good: var(--status-good);
-  --color-warning: var(--status-warning);
-  --color-critical: var(--status-critical);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-edge: var(--edge);
+  --color-edge-2: var(--edge-2);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-withdrawn: var(--withdrawn);
+  --color-claimable: var(--claimable);
+  --color-held: var(--held);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
 }
 
 html {
   background: var(--surface-0);
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--surface-0);
-  color: var(--text-primary);
+  color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Money and identifiers. Tabular figures stop a live balance from reflowing its
@@ -142,12 +149,54 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
-  border-radius: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+
+/* The stream motif: a hairline that drifts, used behind hero sections. */
+@keyframes drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 200px 0;
+  }
+}
+
+.stream-lines {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--edge) 0 2px,
+    transparent 2px 14px
+  );
+  animation: drift 6s linear infinite;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {
