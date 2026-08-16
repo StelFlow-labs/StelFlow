@@ -1,6 +1,6 @@
 # Indexer design
 
-This resolves the design work [docs/architecture.md § 2](../architecture.md#2-indexer-off-chain--planned) deferred: runtime and datastore, the RPC event-retention backstop, and the cursor/reorg/idempotency mechanics that make [Phase 3](../../ROADMAP.md#phase-3--indexer-) rebuildable. Nothing here is implemented — this is the decision record Phase 3 builds against.
+This resolves the design work [docs/architecture.md § 2](architecture.md#2-indexer-off-chain--planned) deferred: runtime and datastore, the RPC event-retention backstop, and the cursor/reorg/idempotency mechanics that make [Phase 3](ROADMAP.md#phase-3--indexer-) rebuildable. Nothing here is implemented — this is the decision record Phase 3 builds against.
 
 **Ground rule, repeated because it constrains every choice below:** the indexer is a cache, never an authority. If the indexer disagrees with the chain, the chain is right, and the dashboard's headline claimable-balance number must come from simulating a contract read, not from this database. Everything the indexer stores is for history, lists, and aggregates — things the contract genuinely cannot answer about itself.
 
@@ -27,7 +27,7 @@ The write pattern is append-heavy (one row per contract event, never updated) wi
 | **TimescaleDB / ClickHouse** | Built for exactly this write pattern at much higher volume, but StelFlow's event rate (one contract, per-stream state changes) doesn't come close to needing columnar storage or hypertables yet. Adds an operational dependency the project doesn't need in Phase 3. | Revisit only if reconciliation/analytics queries become the bottleneck — and Timescale is a Postgres extension, so that path doesn't require a rewrite. |
 | **DynamoDB / Mongo** | No natural fit for "give me every withdrawal for this stream between two ledgers" without a secondary index that duplicates Postgres's btree for free. Loses transactional guarantees the checkpoint design below depends on. | Not recommended. |
 
-**Runtime:** Node.js/TypeScript. The indexer decodes the same contract events the [SDK](../architecture.md#3-typescript-sdk--planned) will have typed bindings for — sharing the decode path and event types between indexer and SDK avoids a second, drifting implementation of "what does a `withdraw` event look like." A typed query layer over Postgres (e.g. Drizzle) keeps the schema below and the TypeScript types it's the same language as the rest of the stack.
+**Runtime:** Node.js/TypeScript. The indexer decodes the same contract events the [SDK](architecture.md#3-typescript-sdk--planned) will have typed bindings for — sharing the decode path and event types between indexer and SDK avoids a second, drifting implementation of "what does a `withdraw` event look like." A typed query layer over Postgres (e.g. Drizzle) keeps the schema below and the TypeScript types it's the same language as the rest of the stack.
 
 ## 3. Cursor and checkpoint design
 
@@ -41,7 +41,7 @@ Every event `getEvents` returns carries an `id` — a TOID (ledger sequence, tra
 
 Deduping raw events isn't sufficient by itself — the materialized `streams` row also has to end up correct no matter how many times a given event is folded into it. Two things make that hold:
 
-1. **Contract events carry absolute state, not deltas.** A `withdraw` event should emit the resulting `withdrawn` total (and a `milestone_approved` event the resulting status), not "+N". Applying the same absolute-value event twice sets the same value twice — a no-op the second time, by construction, with no counter to accidentally increment. This is a requirement on the Phase 1 event design ([ROADMAP Phase 1](../../ROADMAP.md#phase-1--contract-core-) already flags "events designed for the indexer before the indexer exists" — this is what that needs to mean).
+1. **Contract events carry absolute state, not deltas.** A `withdraw` event should emit the resulting `withdrawn` total (and a `milestone_approved` event the resulting status), not "+N". Applying the same absolute-value event twice sets the same value twice — a no-op the second time, by construction, with no counter to accidentally increment. This is a requirement on the Phase 1 event design ([ROADMAP Phase 1](ROADMAP.md#phase-1--contract-core-) already flags "events designed for the indexer before the indexer exists" — this is what that needs to mean).
 2. **Projection is guarded by a monotonic watermark.** Each materialized row (`streams.last_applied_event_id`, `milestones.last_applied_event_id`) only accepts an incoming event if its `event_id` is greater than the one already applied. Combined with (1), reprocessing, out-of-order delivery within a backfill range, or replaying the entire log from scratch all converge to the identical final row.
 
 Net effect: idempotency isn't a dedup step bolted onto ingestion, it's a property of the fold function itself. See [§6](#6-rebuildability) — this is also what makes rebuild-from-scratch safe.
@@ -80,11 +80,11 @@ Stellar RPC's event retention is a bounded window (commonly quoted as 7 days, bu
 
 Backfill jobs get their own `ingest_checkpoints` row (a ledger range rather than a live cursor) so a backfill can be paused, resumed, or re-run without touching the live poller's checkpoint.
 
-This resolves the TODO in [docs/architecture.md § 2](../architecture.md#2-indexer-off-chain--planned): **Galexie-backed self-hosted backfill, with Hubble as the fast one-off cold-start path**, both feeding the same decode-and-dedup pipeline live polling uses.
+This resolves the TODO in [docs/architecture.md § 2](architecture.md#2-indexer-off-chain--planned): **Galexie-backed self-hosted backfill, with Hubble as the fast one-off cold-start path**, both feeding the same decode-and-dedup pipeline live polling uses.
 
 ## 8. Reconciliation against on-chain state
 
-[SECURITY.md](../../SECURITY.md#scope) scopes "the indexer, where a flaw causes it to report balances that don't match the chain" as a reportable bug — reconciliation is what catches that before a bug report does.
+[SECURITY.md](SECURITY.md#scope) scopes "the indexer, where a flaw causes it to report balances that don't match the chain" as a reportable bug — reconciliation is what catches that before a bug report does.
 
 A periodic job (interval TBD at implementation, starting point: every few minutes) walks confirmed streams, calls the contract's claimable-balance simulation for each — the same read path the SDK's accrual preview and the dashboard's degraded mode use — and compares it against the indexer's own recomputation of claimable from its materialized `streams` row. The formula is deterministic, so a mismatch beyond rounding is drift, not noise: it flags `streams.drift_detected = true`, records the observed vs. expected values in `reconciliation_runs`, and surfaces an alert.
 
@@ -256,6 +256,6 @@ CREATE TABLE reconciliation_runs (
 
 ## Next
 
-- [architecture.md § 2](../architecture.md#2-indexer-off-chain--planned) — the component this design resolves.
-- [ROADMAP.md § Phase 3](../../ROADMAP.md#phase-3--indexer-) — the checklist this design is meant to unblock.
-- [SECURITY.md § Scope](../../SECURITY.md#scope) — why reconciliation exists.
+- [architecture.md § 2](architecture.md#2-indexer-off-chain--planned) — the component this design resolves.
+- [ROADMAP.md § Phase 3](ROADMAP.md#phase-3--indexer-) — the checklist this design is meant to unblock.
+- [SECURITY.md § Scope](SECURITY.md#scope) — why reconciliation exists.

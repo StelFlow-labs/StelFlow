@@ -2,11 +2,11 @@
 
 Thanks for looking. This is an early project — the contracts aren't written yet — which changes what's useful. A well-argued issue about the storage layout is worth more right now than a PR fixing a typo. Both are welcome, but calibrate accordingly.
 
-Read [docs/architecture.md](docs/architecture.md) before contributing code. It explains why the design looks the way it does, and most "why don't you just..." questions are answered there.
+Read [docs/architecture.md](architecture.md) before contributing code. It explains why the design looks the way it does, and most "why don't you just..." questions are answered there.
 
 ## Where to start
 
-**Reviewing the design.** [docs/architecture.md](docs/architecture.md#open-questions) ends with five open questions. If you've built on Soroban and have an opinion on any of them, open an issue. Concrete disagreement is the most valuable thing you can send at this stage.
+**Reviewing the design.** [docs/architecture.md](architecture.md#open-questions) ends with five open questions. If you've built on Soroban and have an opinion on any of them, open an issue. Concrete disagreement is the most valuable thing you can send at this stage.
 
 **Picking up an issue.** Issues are labeled by difficulty and area:
 
@@ -35,7 +35,7 @@ If nothing fits, open an issue describing what you want to do before building it
 Nothing in this repo builds yet — Phase 1 is where contract crates arrive, see
 [ROADMAP.md](ROADMAP.md). What you need in the meantime, verified end-to-end by actually running
 it rather than transcribed from documentation, lives in
-[docs/dev-setup.md](docs/dev-setup.md): Rust, `wasm32v1-none`, `stellar-cli`, Node/pnpm, a funded
+[docs/dev-setup.md](dev-setup.md): Rust, `wasm32v1-none`, `stellar-cli`, Node/pnpm, a funded
 testnet identity, and the commands to check current network limits. Start there.
 
 <!-- TODO(maintainer): pin the exact Node version in .nvmrc and the package manager version in package.json#packageManager once the SDK/dashboard workspace exists. -->
@@ -84,7 +84,7 @@ The PR template asks for these. It isn't ceremony — reviewers use it to decide
 Two things get a hard "no" regardless of how good the code is:
 
 1. **It can lose or strand funds.** Rounding that doesn't conserve value, a path where an earned balance becomes unwithdrawable, an unbounded loop or collection that can push a withdrawal past the transaction resource limit. If your change touches accrual math or storage layout, expect close review and expect to be asked for property tests.
-2. **It gives someone power they shouldn't have.** An admin who can pause withdrawals, an approver who can redirect funds, an upgrade function of any kind. These aren't hypotheticals to be weighed case by case — the contract is [non-upgradeable and the pause reaches only `create_stream`](docs/research/upgradeability-and-pause.md), decided deliberately, so a PR reintroducing either is reversing a settled decision and should say so and argue for it rather than slip it in. Read [docs/architecture.md](docs/architecture.md#authorization).
+2. **It gives someone power they shouldn't have.** An admin who can pause withdrawals, an approver who can redirect funds, an upgrade function of any kind. These aren't hypotheticals to be weighed case by case — the contract is [non-upgradeable and the pause reaches only `create_stream`](upgradeability-and-pause.md), decided deliberately, so a PR reintroducing either is reversing a settled decision and should say so and argue for it rather than slip it in. Read [docs/architecture.md](architecture.md#authorization).
 
 Beyond that, review is about clarity. Contract code is read far more often than written, and it's read by auditors who are trying to break it. Prefer the obvious implementation over the clever one. If a function needs a comment to explain *what* it does, it probably needs a different shape; comments explaining *why* are always welcome.
 

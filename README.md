@@ -3,7 +3,7 @@
 StelFlow is a payment-streaming protocol for Stellar/Soroban: a sender locks a SEP-41 asset once, and the recipient's balance accrues continuously against Stellar ledger time instead of arriving as discrete transfers. Unlike a pure time-based stream, StelFlow can gate portions of a stream behind milestones, so funds keep accruing but stay unwithdrawable until a named approver verifies the condition.
 
 > **Status: early / in design.**
-> No contracts are written yet. There is no deployment, no audit, and no published contract address. This repository currently holds the design, the roadmap, and the contribution setup. Everything described below as "planned" is exactly that. If you are here to contribute, [CONTRIBUTING.md](CONTRIBUTING.md) is the place to start — design review and API critique are genuinely useful right now, more so than code.
+> No contracts are written yet. There is no deployment, no audit, and no published contract address. This repository currently holds the design, the roadmap, and the contribution setup. Everything described below as "planned" is exactly that. If you are here to contribute, [CONTRIBUTING.md](docs/CONTRIBUTING.md) is the place to start — design review and API critique are genuinely useful right now, more so than code.
 
 ## Why this exists
 
@@ -82,12 +82,12 @@ Dashed components are planned and unbuilt. [docs/architecture.md](docs/architect
 - [docs/concepts.md](docs/concepts.md) — what money streaming and milestone-gating actually mean, from zero.
 - [docs/architecture.md](docs/architecture.md) — components, data flow, and the Soroban constraints that drive the design.
 - [docs/glossary.md](docs/glossary.md) — every term in one place. Start here if you landed mid-doc. Note that [clawback](docs/glossary.md#clawback-issuer-sense) means two different things in this project.
-- [ROADMAP.md](ROADMAP.md) — what gets built, in what order.
+- [ROADMAP.md](docs/ROADMAP.md) — what gets built, in what order.
 - [docs/faq.md](docs/faq.md) — short answers to what people actually ask, including the ones with uncomfortable answers: no, it isn't audited, and yes, an asset issuer with clawback enabled can reach a live stream.
 
 ## Quickstart
 
-> Nothing is implemented yet, so there is nothing to run. This section records the toolchain contributors will need and will grow into a real quickstart as Phase 1 lands. See [CONTRIBUTING.md](CONTRIBUTING.md#local-setup) for the full setup.
+> Nothing is implemented yet, so there is nothing to run. This section records the toolchain contributors will need and will grow into a real quickstart as Phase 1 lands. See [CONTRIBUTING.md](docs/CONTRIBUTING.md#local-setup) for the full setup.
 
 ```bash
 # 1. Rust toolchain and the Wasm target
@@ -109,9 +109,9 @@ The intended developer flow once Phase 1 exists: build the Wasm, deploy to testn
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md). Short version: issues labeled `good first issue` are scoped to be finishable without reading the whole design; comment on one before you start so two people don't write it twice. Design feedback on `docs/` is welcome as an issue — at this stage a good argument against the storage layout is worth more than a PR.
+Read [CONTRIBUTING.md](docs/CONTRIBUTING.md). Short version: issues labeled `good first issue` are scoped to be finishable without reading the whole design; comment on one before you start so two people don't write it twice. Design feedback on `docs/` is welcome as an issue — at this stage a good argument against the storage layout is worth more than a PR.
 
-Contributors are credited in [CONTRIBUTORS.md](CONTRIBUTORS.md).
+Contributors are credited in [CONTRIBUTORS.md](docs/CONTRIBUTORS.md).
 
 ## Who's building this
 
@@ -121,7 +121,7 @@ Two things from that project carry directly into this one.
 
 The first is design experience: the accrual math, the cancellation semantics, and a withdrawal API that had to be redesigned once are lessons applied here rather than learned again.
 
-The second matters more if you're deciding whether to contribute. StackStream's security review was run as an open multi-auditor process — 11 independent contributors across four PRs and an issue thread, which found and fixed four real bugs including a missing recovery path and two griefing vectors. That review is [published in full](https://github.com/jayteemoney/stackstream/tree/main/audits), false positives and deferred findings included. StelFlow intends to work the same way, which is why the issues here are scoped with acceptance criteria and why [SECURITY.md](SECURITY.md) already describes a disclosure process for a project with nothing to disclose yet.
+The second matters more if you're deciding whether to contribute. StackStream's security review was run as an open multi-auditor process — 11 independent contributors across four PRs and an issue thread, which found and fixed four real bugs including a missing recovery path and two griefing vectors. That review is [published in full](https://github.com/jayteemoney/stackstream/tree/main/audits), false positives and deferred findings included. StelFlow intends to work the same way, which is why the issues here are scoped with acceptance criteria and why [SECURITY.md](docs/SECURITY.md) already describes a disclosure process for a project with nothing to disclose yet.
 
 StackStream is a separate codebase, not a preview of this one. Clarity and Rust/Soroban differ enough in storage model, fee model, and asset interface that porting was never on the table. Most of what makes StelFlow's design specific — the persistent-storage choice, TTL archival handling, the milestone cap forced by the per-transaction read budget — answers Soroban constraints that have no Stacks equivalent.
 

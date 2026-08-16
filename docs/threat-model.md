@@ -2,13 +2,13 @@
 
 Answers [issue #9](https://github.com/StelFlow-labs/StelFlow/issues/9).
 
-[SECURITY.md](../../SECURITY.md) names five classes of concern in a short section. This document is
+[SECURITY.md](SECURITY.md) names five classes of concern in a short section. This document is
 the reasoning behind them, written before Phase 1 so the contract can be built against it rather
 than audited against it later.
 
 **Nothing here describes a vulnerability in deployed software.** There is no deployed software. Every
 threat below is a property of the design as it currently stands in
-[architecture.md](../architecture.md) and [concepts.md](../concepts.md), and several of them are
+[architecture.md](architecture.md) and [concepts.md](concepts.md), and several of them are
 resolved by decisions that haven't been made yet. Where that's the case, this document says which
 decision and recommends an answer.
 
@@ -93,12 +93,12 @@ now-or-never design problem, which is why T3 below moved.
 **Attacker:** usually no one. This is mostly a self-inflicted wound, which is why it ranks so high —
 it needs no adversary at all.
 
-**Capability:** [milestones live inside the stream struct](../architecture.md#the-per-transaction-read-budget)
+**Capability:** [milestones live inside the stream struct](architecture.md#the-per-transaction-read-budget)
 rather than as separate entries. A stream with enough milestones produces an entry large enough that
 reading it exceeds the transaction's resource budget.
 
 **Impact:** the recipient's earned funds can never be withdrawn. This is
-[SECURITY.md](../../SECURITY.md)'s class 2 and the worst outcome the system can produce short of
+[SECURITY.md](SECURITY.md)'s class 2 and the worst outcome the system can produce short of
 outright theft — worse in one respect than theft, because there is no attacker to pursue and no
 recovery path at all.
 
@@ -127,8 +127,8 @@ would be affected — a conservative cap buys margin against that too.
 **Attacker:** none required. The approver is a company that folded, a person who lost their key, a
 contract that was superseded, or someone who simply stopped answering.
 
-**Capability:** [milestone gates](../concepts.md#milestone-gates) release only when the named
-[approver](../glossary.md#approver) marks them met. There is no timeout and no fallback.
+**Capability:** [milestone gates](concepts.md#milestone-gates) release only when the named
+[approver](glossary.md#approver) marks them met. There is no timeout and no fallback.
 
 **Impact:** the gated tranche accrues normally and is never claimable. On a **cancelable** stream the
 sender can cancel and recover it — the recipient loses work they may have done, but the funds aren't
@@ -179,13 +179,13 @@ asked to send. The contract stores `total` as the requested figure.
 **Impact:** the stream promises more than it holds. Accrual is computed against a `total` the
 contract can't pay, so early withdrawers are paid in full and the last withdrawer — usually the
 recipient's final settlement — finds the balance short. That is a **value-conservation failure**,
-[SECURITY.md](../../SECURITY.md)'s class 1, and it breaks the invariant every scenario in
-[behaviour.md](../specs/behaviour.md) asserts.
+[SECURITY.md](SECURITY.md)'s class 1, and it breaks the invariant every scenario in
+[behaviour.md](behaviour.md) asserts.
 
 **Cost:** free to the issuer; invisible to the sender at creation.
 
 **Mitigation.** This was architecture.md's open TODO and
-[behaviour.md's case 4](../specs/behaviour.md#resolved-cases). The threat model's answer:
+[behaviour.md's case 4](behaviour.md#resolved-cases). The threat model's answer:
 **measure, don't trust.** `create_stream` should read the contract's own balance before and after the
 transfer and store the delta as `total`. It costs one extra balance read at creation, it makes the
 stored figure true by construction for every asset, and it converts an unbounded class of
@@ -202,7 +202,7 @@ afterwards, and the residual there is accepted, bounded by the rule that `balanc
 
 **Attacker:** whoever holds the pause key, under compulsion or otherwise.
 
-**Capability:** [open question 5](../architecture.md#open-questions) asks whether there's an
+**Capability:** [open question 5](architecture.md#open-questions) asks whether there's an
 emergency stop and whether it can stop withdrawals.
 
 **Impact:** if a pause can block `withdraw`, then a recipient's *already-earned* balance is freezable
@@ -233,7 +233,7 @@ conditional on human reaction time; its abuse value is not.**
 **Attacker:** the sender, or a party colluding with them.
 
 **Capability:** nothing prevents a sender from naming themselves — or an address they control — as a
-milestone's approver. [Cancellation rule 4](../concepts.md#cancellation-and-clawback) then returns
+milestone's approver. [Cancellation rule 4](concepts.md#cancellation-and-clawback) then returns
 unapproved tranches to the sender **in full**, including the portion that already accrued while the
 gate was shut.
 
@@ -269,8 +269,8 @@ single-party setups awkward. Disclosure is the honest mitigation here.
 
 **Capability:** if an asset was issued with `AUTH_CLAWBACK_ENABLED`, the issuer can burn it from any
 holder — including this contract, mid-stream. The power belongs to the
-[SAC's](../glossary.md#stellar-asset-contract-sac) admin interface, not to anything
-[SEP-41](../glossary.md#sep-41) defines, so it rides on the asset rather than the interface.
+[SAC's](glossary.md#stellar-asset-contract-sac) admin interface, not to anything
+[SEP-41](glossary.md#sep-41) defines, so it rides on the asset rather than the interface.
 
 **Impact:** funds vanish from a live stream. Total loss, and no contract logic can prevent or detect
 it in advance.
@@ -288,7 +288,7 @@ cases StelFlow exists for. Refusal also can't be complete: an issuer can enable 
 stream is created. So the flag should be checked and surfaced at creation, re-checked and displayed
 on the dashboard for live streams, and never presented as a solved problem.
 
-**Status:** accepted and out of scope, per [SECURITY.md](../../SECURITY.md#scope). Ranked P2 rather
+**Status:** accepted and out of scope, per [SECURITY.md](SECURITY.md#scope). Ranked P2 rather
 than lower only because the severity is total and the disclosure work is real.
 
 ## T8 — Archival economics as a griefing vector
@@ -331,7 +331,7 @@ only surface.
 **Capability:** mark milestones met.
 
 **Impact:** smaller than it first appears, and the design deserves credit for it. Approval
-[does not accelerate accrual](../concepts.md#what-a-gate-does-not-do) — it unlocks what has already
+[does not accelerate accrual](concepts.md#what-a-gate-does-not-do) — it unlocks what has already
 streamed. So a compromised approver releases at most the tranche's *accrued-to-date* amount, not the
 tranche's full value, and the released funds go to the **recipient**, not to the attacker. Unless the
 attacker *is* the recipient, compromising an approver spends a stolen key to pay a third party early.
@@ -376,13 +376,13 @@ operations should default to streams above a user-chosen threshold.
 
 **Attacker:** a validator, or someone who has bribed enough of them.
 
-**Capability:** nudge the [ledger close time](../glossary.md#ledger-close-time) that
+**Capability:** nudge the [ledger close time](glossary.md#ledger-close-time) that
 `env.ledger().timestamp()` returns.
 
 **Impact:** worth showing the arithmetic, because the intuition that "time controls money here" makes
 this feel more dangerous than it is. Accrual is `total × elapsed / duration`, so shifting `now`
 forward by Δ changes what's streamed by `total × Δ / duration`. On the 30-day, 3,000 USDC stream in
-[concepts.md](../concepts.md#a-worked-example-alice-and-bob), a Δ of one ledger — about 5 seconds —
+[concepts.md](concepts.md#a-worked-example-alice-and-bob), a Δ of one ledger — about 5 seconds —
 moves roughly **0.006 USDC**. Moving 1% of the stream's value requires Δ ≈ 7.2 hours, which SCP will
 not produce; close times are consensus values, non-decreasing and closely tracked to real time.
 
@@ -409,7 +409,7 @@ or strand value permanently?
 **No, and it's worth writing down why, because "salami slicing" is a real bug class elsewhere.**
 
 The property that kills it is that `streamed` is
-[recomputed from scratch on every call](../architecture.md#arithmetic) rather than accumulated, and a
+[recomputed from scratch on every call](architecture.md#arithmetic) rather than accumulated, and a
 withdrawal pays `streamed(t) − withdrawn`. Withdrawing at times `t₁ < t₂ < … < tₙ` pays
 
 ```
@@ -427,8 +427,8 @@ Stranding is bounded too. Mid-stream, truncation leaves `streamed` at most a str
 below the real-valued figure, and that shortfall is recovered as accrual moves past it rather than
 compounding. At `end` the special case pays the remaining balance rather than recomputing, so the
 final settlement is exact — which is what
-[concepts.md's reconciliation](../concepts.md#reconciliation) demonstrates and what every
-state-changing scenario in [behaviour.md](../specs/behaviour.md) asserts.
+[concepts.md's reconciliation](concepts.md#reconciliation) demonstrates and what every
+state-changing scenario in [behaviour.md](behaviour.md) asserts.
 
 One caveat, more precision than defect: `streamed` is floored **per portion** and then summed, so a
 multi-tranche stream can sit a few stroops below a single-tranche stream of the same total. It errs
@@ -484,7 +484,7 @@ Collected so they can be argued with individually:
 
 - **The SDK, indexer, and dashboard as attack surfaces in their own right.** A malicious or buggy
   frontend that gets a user to sign the wrong transaction is in
-  [SECURITY.md's scope](../../SECURITY.md#scope) but needs its own model once there's code.
+  [SECURITY.md's scope](SECURITY.md#scope) but needs its own model once there's code.
 - **Trustless Work's contracts**, when an escrow acts as approver. Their trust assumptions become
   ours at that boundary, and that deserves examination when the integration is real rather than
   intended.
@@ -496,10 +496,10 @@ Collected so they can be argued with individually:
 ## Next
 
 - [ttl-strategy.md](ttl-strategy.md) — archival and restore economics, which T8 leans on directly.
-- [../specs/behaviour.md](../specs/behaviour.md) — the value-conservation invariant T4 and T12 are
+- [../specs/behaviour.md](behaviour.md) — the value-conservation invariant T4 and T12 are
   about, asserted scenario by scenario.
-- [../../SECURITY.md](../../SECURITY.md) — reporting process and scope.
+- [../../SECURITY.md](SECURITY.md) — reporting process and scope.
 - [upgradeability-and-pause.md](upgradeability-and-pause.md) — the decisions that closed T1 and T5,
   and partially opened T3.
-- [../architecture.md](../architecture.md#open-questions) — open questions 4 and 5 were T1 and T5;
+- [../architecture.md](architecture.md#open-questions) — open questions 4 and 5 were T1 and T5;
   both now record the decision rather than the question.

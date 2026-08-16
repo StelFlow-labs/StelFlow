@@ -1,7 +1,7 @@
 # Design decision: upgradeability and emergency pause
 
 Answers [issue #33](https://github.com/StelFlow-labs/StelFlow/issues/33), which is
-[architecture.md](../architecture.md#open-questions) open questions 4 and 5 and
+[architecture.md](architecture.md#open-questions) open questions 4 and 5 and
 [threat-model](threat-model.md) **T1** and **T5**.
 
 **Three decisions, which are really one:**
@@ -80,7 +80,7 @@ Two smaller points that the table doesn't show, both of which push the same way:
   more of a stream is milestone-gated — the feature StelFlow exists for — the less the timelock is
   worth.
 - **A cliff makes it zero.** A recipient inside a cliff has `claimable = 0` by construction
-  ([architecture.md](../architecture.md#stream-lifecycle)). For the four-year-vest-with-one-year-cliff
+  ([architecture.md](architecture.md#stream-lifecycle)). For the four-year-vest-with-one-year-cliff
   shape that vesting actually uses, an upgrade announced in month two lets the recipient rescue
   nothing whatsoever.
 
@@ -129,7 +129,7 @@ cancelable == false  ->  sender.require_auth() AND recipient.require_auth()
 That is the entire change. Specifically, it is **not**:
 
 - a new entry point — `cancel` stays one function and the contract stays at four;
-- a new settlement rule — [cancellation rules 1–4](../concepts.md#cancellation-and-clawback) apply
+- a new settlement rule — [cancellation rules 1–4](concepts.md#cancellation-and-clawback) apply
   unchanged, so there is no new arithmetic and no new conservation case;
 - a new role — both addresses are already stored on the stream;
 - a weakening of anything. The recipient's guarantee under `cancelable = false` was "the sender can
@@ -279,7 +279,7 @@ cannot be retrofitted onto streams created without one.
   non-cancelable stream whose recipient has lost their key, or whose sender has disappeared, stays on
   the old contract until it completes. This is the honest residual and it is the same residual as T3.
 - **A "global admin" now exists, narrowly.** The claim in
-  [architecture.md](../architecture.md#authorization) needed amending from "there is no global admin"
+  [architecture.md](architecture.md#authorization) needed amending from "there is no global admin"
   to a precise statement of what the one global role can and cannot do. Precision beats a clean
   sentence that has quietly stopped being true.
 - **Protocol changes can strand assumptions.** A non-upgradeable contract cannot adapt to a Soroban
@@ -297,7 +297,7 @@ cannot be retrofitted onto streams created without one.
   as the better practice — rather than stored and administered. Nothing about TTL is tunable, and
   nothing needs to be.
 - **`cancel` takes two authorizations when `cancelable = false`.** The
-  [behaviour spec](../specs/behaviour.md#feature-cancel) scenario for non-cancelable streams is
+  [behaviour spec](behaviour.md#feature-cancel) scenario for non-cancelable streams is
   amended: rejected when the sender alone authorizes, permitted when both do.
 - **A solvency assertion on every payout.** `payout <= total - withdrawn` per stream, on `withdraw`
   and `cancel`. It is the structural answer to the pooled-balance argument above and should be an
@@ -340,9 +340,9 @@ would be more valuable still and I did not find any I could verify. -->
 ## Next
 
 - [threat-model.md](threat-model.md) — T1 and T5 now record these decisions; T3 is amended.
-- [../architecture.md](../architecture.md#authorization) — the amended authorization claim, and open
+- [../architecture.md](architecture.md#authorization) — the amended authorization claim, and open
   questions 4 and 5 marked settled.
-- [../specs/behaviour.md](../specs/behaviour.md) — the scenarios this makes writable, including
+- [../specs/behaviour.md](behaviour.md) — the scenarios this makes writable, including
   two-signature cancel and the pause's scope.
 - [milestone-revocation.md](milestone-revocation.md) — the other half of "what powers exist over a
   live stream," decided the same way and for the same reason.

@@ -28,7 +28,7 @@ The current phase. Get the design written down well enough that someone can disa
 
 - [x] README, concepts, architecture
 - [x] Contribution setup — templates, code of conduct, security policy
-- [ ] Resolve the open questions in [docs/architecture.md](docs/architecture.md#open-questions): ~~milestone revocation~~ (done, #17), ~~upgradeability~~ and ~~pausing~~ (done, #33), stream IDs and multiple recipients still open
+- [ ] Resolve the open questions in [docs/architecture.md](architecture.md#open-questions): ~~milestone revocation~~ (done, #17), ~~upgradeability~~ and ~~pausing~~ (done, #33), stream IDs and multiple recipients still open
 - [ ] Write the contract interface as a Rust trait with no implementation, and review it as a PR before anything is built behind it
 - [ ] Decide the workspace layout (contract crates, SDK package, dashboard app, indexer service)
 
@@ -46,7 +46,7 @@ The minimum thing that is genuinely a payment stream: linear accrual against led
 - [ ] Cliff support
 - [ ] TTL extension on every state-changing call, plus a public `bump_stream`
 - [ ] Events for every state change, designed for the indexer before the indexer exists
-- [ ] Unit tests against a mocked ledger clock, including: withdrawing twice in one ledger, withdrawing at exactly `start` and exactly `end`, a stream of duration 1, and a stream whose total doesn't divide evenly by its duration — [docs/specs/behaviour.md](docs/specs/behaviour.md) has these written out as Given/When/Then scenarios already, use it as the checklist
+- [ ] Unit tests against a mocked ledger clock, including: withdrawing twice in one ledger, withdrawing at exactly `start` and exactly `end`, a stream of duration 1, and a stream whose total doesn't divide evenly by its duration — [docs/specs/behaviour.md](behaviour.md) has these written out as Given/When/Then scenarios already, use it as the checklist
 - [ ] Measure real footprint sizes and set `MAX_MILESTONES_PER_STREAM` and `MAX_BATCH_SIZE` from measurement
 
 **Done when:** a stream can be created and fully withdrawn on testnet, and the sum of withdrawals equals the deposit exactly, with no dust stranded.
@@ -63,7 +63,7 @@ What makes this StelFlow rather than a Sablier port.
 - [ ] Milestone revocation, or an explicit documented decision not to support it
 - [ ] Tests for the ugly cases: cancel with a pending approval in flight, approval after the end time, approval of a milestone on a canceled stream, cancel with zero elapsed time
 
-**Done when:** the grant scenario in [docs/concepts.md](docs/concepts.md#milestone-gates) runs end-to-end on testnet, including a cancellation partway through.
+**Done when:** the grant scenario in [docs/concepts.md](concepts.md#milestone-gates) runs end-to-end on testnet, including a cancellation partway through.
 
 ## Phase 3 — Indexer ⚪
 
@@ -83,7 +83,7 @@ Contract events into queryable history.
 - [ ] Typed bindings generated from the contract spec, regenerated in CI so drift breaks the build
 - [ ] Local accrual preview — recompute claimable client-side from stream state for live UI, without an RPC call per tick
 - [ ] Transaction builders with correct auth entries for each role
-- [ ] **Archived-entry handling** — detect an archived stream and produce a restore-then-withdraw flow. Not optional; see [docs/architecture.md](docs/architecture.md#storage-type-and-ttl)
+- [ ] **Archived-entry handling** — detect an archived stream and produce a restore-then-withdraw flow. Not optional; see [docs/architecture.md](architecture.md#storage-type-and-ttl)
 - [ ] Batch chunking against live network limits rather than hardcoded constants
 - [ ] Indexer client
 - [ ] Tests that assert the SDK's local accrual math matches the contract's exactly across fuzzed inputs
@@ -104,7 +104,7 @@ Contract events into queryable history.
 
 ## Phase 6 — Trustless Work integration ⚪
 
-- [ ] Confirm the integration surface — cross-contract approver call vs. off-chain agent (see the TODO in [docs/architecture.md](docs/architecture.md#trustless-work-integration))
+- [ ] Confirm the integration surface — cross-contract approver call vs. off-chain agent (see the TODO in [docs/architecture.md](architecture.md#trustless-work-integration))
 - [ ] Escrow-as-approver: a Trustless Work escrow address acting as the approver on gated milestones
 - [ ] Reference implementation of the grant-disbursement flow end to end
 - [ ] Joint documentation, reviewed by Trustless Work rather than written at them
@@ -128,7 +128,7 @@ Contract events into queryable history.
 
 - [ ] Deployment with published, verifiable Wasm hashes
 - [ ] Reproducible builds so anyone can confirm the deployed Wasm matches this source
-- [x] Documented upgrade or migration policy, decided in Phase 0 — [non-upgradeable, with migration by cancel-and-recreate](docs/research/upgradeability-and-pause.md). What remains for this phase is *executing* it: publishing the policy where users see it before they sign, not deciding it.
+- [x] Documented upgrade or migration policy, decided in Phase 0 — [non-upgradeable, with migration by cancel-and-recreate](upgradeability-and-pause.md). What remains for this phase is *executing* it: publishing the policy where users see it before they sign, not deciding it.
 - [ ] Monitoring and incident runbook
 
 **Done when:** there is a mainnet address in the README and it's the real one.
@@ -143,4 +143,4 @@ Stated so nobody builds them by accident:
 - **Protocol fees.** Not in v1. Adding a fee later is a governance decision that needs a real discussion, not a constant someone slips into a PR.
 - **Cross-chain streaming.** Out of scope.
 - **Dispute resolution.** That's Trustless Work's job. Integrate, don't reimplement.
-- **Multi-recipient streams.** Deferred pending the entry-cost question in [docs/architecture.md](docs/architecture.md#open-questions). Argue for it in an issue if you have the use case.
+- **Multi-recipient streams.** Deferred pending the entry-cost question in [docs/architecture.md](architecture.md#open-questions). Argue for it in an issue if you have the use case.

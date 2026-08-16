@@ -41,7 +41,7 @@ to solve.
 Option B is the intuitive one, and it is the one to rule out carefully, because "prior withdrawals
 stand, future accrual adjusts" *sounds* fair.
 
-Run it against the [worked example](../concepts.md#a-worked-example-alice-and-bob). Alice streams
+Run it against the [worked example](concepts.md#a-worked-example-alice-and-bob). Alice streams
 30,000,000,000 stroops to Bob over 30 days: 18,000,000,000 base, 12,000,000,000 gated on one
 milestone. Bob withdraws 6,000,000,000 at day 10. The milestone is approved at day 18 and Bob
 withdraws the full 12,000,000,000 then, putting `withdrawn` at 18,000,000,000 — exactly the sequence
@@ -95,14 +95,14 @@ Three reasons, in order of weight.
 
 **1. It is the only option that keeps the promise the design is sold on.**
 
-[`concepts.md`](../concepts.md#what-a-gate-does-not-do) states that a gate "does not give the
+[`concepts.md`](concepts.md#what-a-gate-does-not-do) states that a gate "does not give the
 approver custody — the approver flips a flag. They cannot redirect funds." Under Option A that claim
 is not just true, it is *structurally* true: the approver's single power moves value in one direction
 only, toward the recipient, and can never move it back. Under Option B or C the approver can reduce
 what the recipient ultimately receives, which is custody in substance regardless of what it is called,
 and the sentence would need amending to something much weaker.
 
-The broader promise in [the comparison table](../concepts.md#how-this-differs-from-what-already-exists)
+The broader promise in [the comparison table](concepts.md#how-this-differs-from-what-already-exists)
 is that the recipient is funded while conditions pend. A retraction power inverts that: the recipient
 would be funded *provisionally* while conditions pend, and would not know for certain what they had
 earned until the stream ended.
@@ -142,7 +142,7 @@ sender's exposure is bounded by tranches that have already accrued, and there is
 redirection. That is a materially smaller problem than a revocation power would create.
 
 The fraud case is the one Option A genuinely cannot handle, and the honest answer is that it was never
-StelFlow's to handle. [`architecture.md`](../architecture.md#trustless-work-integration) already draws
+StelFlow's to handle. [`architecture.md`](architecture.md#trustless-work-integration) already draws
 the line: Trustless Work decides *whether* a condition is met, StelFlow decides *how fast* money moves
 once it is. Trustless Work implements disputes. A grant program that needs a dispute process should
 name a Trustless Work escrow as the approver, and that escrow can hold its approval until its own
@@ -185,6 +185,6 @@ they are guaranteed, and that cost is larger and falls on the party with less po
 
 ## Next
 
-- [../concepts.md](../concepts.md#milestone-gates) — where the rule is stated for readers.
+- [../concepts.md](concepts.md#milestone-gates) — where the rule is stated for readers.
 - [threat-model.md](threat-model.md) — T3 and T9, which this decision leans on.
-- [../specs/behaviour.md](../specs/behaviour.md) — the scenarios this makes writable.
+- [../specs/behaviour.md](behaviour.md) — the scenarios this makes writable.

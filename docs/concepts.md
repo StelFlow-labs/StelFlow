@@ -77,7 +77,7 @@ The approver is a role, not necessarily the sender — it can be a grant committ
 
 **Approval is final. A met milestone cannot be un-met.** The approver's only power is to release, and once a tranche is released it stays released — there is no revocation, and no way for anyone to reduce what the recipient has already become entitled to. A sender who wants a way out needs a [cancelable](glossary.md#cancelable) stream, which ends the whole stream rather than re-locking one tranche.
 
-That cuts both ways, and the cost is worth knowing before you name an approver: if a milestone is approved in error, StelFlow offers no remedy. Where a real dispute process is needed, name a Trustless Work escrow as the approver and let it withhold approval until its own process concludes. Reasoning and the alternatives considered: [research/milestone-revocation.md](research/milestone-revocation.md).
+That cuts both ways, and the cost is worth knowing before you name an approver: if a milestone is approved in error, StelFlow offers no remedy. Where a real dispute process is needed, name a Trustless Work escrow as the approver and let it withhold approval until its own process concludes. Reasoning and the alternatives considered: [research/milestone-revocation.md](milestone-revocation.md).
 
 ### What a gate does not do
 
@@ -201,7 +201,7 @@ Day 10, 18, and 30 were chosen because each divides the portions evenly. At an a
 
 A stream can be created [cancelable](glossary.md#cancelable) or not. Non-cancelable is the right default for vesting: the recipient needs a guarantee. Cancelable is the right default for grants: the funder needs an exit if the work stops.
 
-**Precisely, `cancelable = false` means the sender cannot cancel *unilaterally* — not that the stream can never be cancelled.** The sender and the recipient acting together can always cancel, and the settlement rules below apply unchanged when they do. This takes nothing from the recipient, whose guarantee was always about the sender acting alone, and it means a non-cancelable stream is not a dead end when both parties want out — which matters because the contract is [non-upgradeable](research/upgradeability-and-pause.md), so an unbreakable stream would be unbreakable for the life of the contract. Neither party can do it alone, in either direction.
+**Precisely, `cancelable = false` means the sender cannot cancel *unilaterally* — not that the stream can never be cancelled.** The sender and the recipient acting together can always cancel, and the settlement rules below apply unchanged when they do. This takes nothing from the recipient, whose guarantee was always about the sender acting alone, and it means a non-cancelable stream is not a dead end when both parties want out — which matters because the contract is [non-upgradeable](upgradeability-and-pause.md), so an unbreakable stream would be unbreakable for the life of the contract. Neither party can do it alone, in either direction.
 
 On cancel:
 
@@ -232,5 +232,5 @@ The last row is the one StelFlow is built for.
 
 - [glossary.md](glossary.md) — every term on this page in one place, plus the Soroban vocabulary.
 - [architecture.md](architecture.md) — how this is actually built on Soroban, and which constraints bend the design.
-- [specs/behaviour.md](specs/behaviour.md) — the semantics on this page turned into Given/When/Then scenarios, including the awkward cases.
-- [../ROADMAP.md](../ROADMAP.md) — the order it gets built in.
+- [specs/behaviour.md](behaviour.md) — the semantics on this page turned into Given/When/Then scenarios, including the awkward cases.
+- [../ROADMAP.md](ROADMAP.md) — the order it gets built in.

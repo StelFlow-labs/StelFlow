@@ -76,7 +76,7 @@ Name it, say why, and say what it replaces. -->
 - [ ] Test suite passes locally
 - [ ] This PR does one thing
 - [ ] No keys, secrets, or `.env` files in the diff
-- [ ] I've read [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) and agree to license this under Apache-2.0
+- [ ] I've read [CONTRIBUTING.md](https://github.com/StelFlow-labs/StelFlow/blob/main/docs/CONTRIBUTING.md) and agree to license this under Apache-2.0
 
 ## Open questions for the reviewer
 

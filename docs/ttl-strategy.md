@@ -1,8 +1,8 @@
 # Research: TTL and state-archival strategy for long-lived streams
 
-Answers [issue #6](https://github.com/StelFlow-labs/StelFlow/issues/6). Narrows the TODO in [architecture.md → Storage type and TTL](../architecture.md#storage-type-and-ttl).
+Answers [issue #6](https://github.com/StelFlow-labs/StelFlow/issues/6). Narrows the TODO in [architecture.md → Storage type and TTL](architecture.md#storage-type-and-ttl).
 
-**The problem, restated precisely:** a stream is one [`persistent`](../glossary.md#persistent-storage) entry. Persistent entries have a [TTL](../glossary.md#ttl-time-to-live) that must be periodically extended or the entry [archives](../glossary.md#state-archival). A 4-year vesting stream with a 1-year cliff sits untouched for far longer than any single TTL extension can cover — checked below, the network's own maximum extension window is about six months, not four years. Archival of the highest-value streams isn't a tail risk to design around; it's what happens by default unless something acts on the stream's behalf. This document works out how TTL and archival actually behave today, what keeping a stream alive costs, which mitigation is worth building, and what a recipient's SDK needs to do about the streams that archive anyway.
+**The problem, restated precisely:** a stream is one [`persistent`](glossary.md#persistent-storage) entry. Persistent entries have a [TTL](glossary.md#ttl-time-to-live) that must be periodically extended or the entry [archives](glossary.md#state-archival). A 4-year vesting stream with a 1-year cliff sits untouched for far longer than any single TTL extension can cover — checked below, the network's own maximum extension window is about six months, not four years. Archival of the highest-value streams isn't a tail risk to design around; it's what happens by default unless something acts on the stream's behalf. This document works out how TTL and archival actually behave today, what keeping a stream alive costs, which mitigation is worth building, and what a recipient's SDK needs to do about the streams that archive anyway.
 
 All network numbers below were checked with `stellar network settings --network testnet` on **2026-08-11**, using stellar-cli 23.4.1. Testnet reported **protocol version 27**; the installed CLI only fully understands protocol 23, so the dump may be missing settings introduced after that protocol. Anything numeric in this document is a snapshot, not a constant — see [§ Parameters that must not be hardcoded](#parameters-that-must-not-be-hardcoded) for why, and how the contract and SDK should read these live instead.
 
@@ -10,14 +10,14 @@ All network numbers below were checked with `stellar network settings --network 
 
 ### Storage types, briefly
 
-Soroban has three storage types; StelFlow already chose [`persistent`](../glossary.md#persistent-storage) for stream state, for the reason [architecture.md](../architecture.md#storage-type-and-ttl) gives — [`temporary`](../glossary.md#temporary-storage) entries are deleted, not archived, and that's fatal for a custody record. Confirmed straight from the source:
+Soroban has three storage types; StelFlow already chose [`persistent`](glossary.md#persistent-storage) for stream state, for the reason [architecture.md](architecture.md#storage-type-and-ttl) gives — [`temporary`](glossary.md#temporary-storage) entries are deleted, not archived, and that's fatal for a custody record. Confirmed straight from the source:
 
 > When a Temporary entry's TTL is 0, it is deleted from the ledger and is permanently inaccessible. When a Persistent or Instance entry TTL is 0, it is "archived" and can't be accessed until it is "restored".
 > — [Stellar docs: State Archival](https://developers.stellar.org/docs/learn/fundamentals/contract-development/storage/state-archival), checked 2026-08-11
 
 The formal protocol definition is [CAP-0046-12, "Soroban State Archival Interface"](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0046-12.md) (Status: Final).
 
-One nuance worth carrying into the design: **[instance storage](../glossary.md#instance-storage) shares one TTL across the whole contract**, while persistent entries each carry their own. That asymmetry matters for the recommendation below — instance archiving blocks *every* stream at once, while one stream's persistent entry archiving blocks only that stream. They should not get the same level of care.
+One nuance worth carrying into the design: **[instance storage](glossary.md#instance-storage) shares one TTL across the whole contract**, while persistent entries each carry their own. That asymmetry matters for the recommendation below — instance archiving blocks *every* stream at once, while one stream's persistent entry archiving blocks only that stream. They should not get the same level of care.
 
 ### TTL mechanics
 
@@ -195,5 +195,5 @@ The architecture.md TODO comment has been updated to point here and reflect this
 
 ## Next
 
-- [../architecture.md](../architecture.md) — the design this narrows.
-- [../glossary.md](../glossary.md) — TTL, state archival, RestoreFootprintOp definitions.
+- [../architecture.md](architecture.md) — the design this narrows.
+- [../glossary.md](glossary.md) — TTL, state archival, RestoreFootprintOp definitions.

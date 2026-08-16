@@ -1,0 +1,11 @@
+# Soroban rejects wasm32-unknown-unknown on Rust 1.82+: that target silently
+# enables reference-types and multi-value, which the Soroban environment does not
+# support and which cannot easily be turned off. wasm32v1-none is the supported
+# target from Rust 1.84 onward.
+[build]
+target = "wasm32v1-none"
+
+[alias]
+# Tests need the host, not wasm — `cargo test` alone would try to run the
+# wasm32v1-none binaries.
+t = "test --target aarch64-apple-darwin"

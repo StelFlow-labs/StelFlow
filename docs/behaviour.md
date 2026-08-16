@@ -3,7 +3,7 @@
 Given/When/Then scenarios for the four stream entry points — plus the pause, which is administrative
 rather than a stream operation and is specified here mainly to pin down what it cannot reach — written
 against the semantics in
-[docs/concepts.md](../concepts.md) and [docs/architecture.md](../architecture.md). None of this is
+[docs/concepts.md](concepts.md) and [docs/architecture.md](architecture.md). None of this is
 implemented — this is the checklist the eventual `#[test]` functions turn into, and a place to argue
 with the design before code makes arguing expensive.
 
@@ -14,7 +14,7 @@ Conventions used throughout:
 - `elapsed = clamp(now, start, end) - start`, `duration = end - start`.
 - `streamed(portion) = portion.amount * elapsed / duration`, rounded down, except at `now >= end`
   where `streamed(portion) = portion.amount` exactly (the end-of-stream case is special-cased to the
-  remaining balance rather than the formula, per [architecture.md#arithmetic](../architecture.md#arithmetic)).
+  remaining balance rather than the formula, per [architecture.md#arithmetic](architecture.md#arithmetic)).
 - `held = sum of streamed(m) for every unapproved milestone m`.
 - `claimable = streamed(base) + sum(streamed(m) for approved m) - withdrawn - held`, which reduces to
   `claimable = streamed_total - withdrawn - held`.
@@ -26,7 +26,7 @@ remaining_in_contract`. Every scenario below that changes state asserts this exp
   closure check and would still balance if one stream were paid out of another's money. The two are
   not the same assertion and Phase 1 should test both.
 - Every entry point calls `require_auth` on a specific address (see
-  [architecture.md#authorization](../architecture.md#authorization)). Every scenario states who is
+  [architecture.md#authorization](architecture.md#authorization)). Every scenario states who is
   calling and asserts unauthorized callers are rejected without side effects.
 
 Streams in these scenarios are kept small and, where possible, evenly divisible, so the arithmetic can
@@ -300,7 +300,7 @@ And every ordinary withdraw scenario above applies unchanged from that point
 
 The contract has no archived-entry branch to write, and could not have one — there is nothing for it
 to catch. This is an SDK obligation, not contract behaviour. See
-[ttl-strategy.md](../research/ttl-strategy.md) for the Protocol 23 mechanics and the concrete client
+[ttl-strategy.md](ttl-strategy.md) for the Protocol 23 mechanics and the concrete client
 flow.
 
 ---
@@ -426,7 +426,7 @@ And the same cancel event is emitted as for a cancelable stream — the indexer 
 
 This is the whole of the two-signature rule: `cancelable=false` means the sender cannot cancel
 *unilaterally*, not that nobody can. See
-[research/upgradeability-and-pause.md](../research/upgradeability-and-pause.md#the-fix-cancel-by-unanimous-consent).
+[research/upgradeability-and-pause.md](upgradeability-and-pause.md#the-fix-cancel-by-unanimous-consent).
 
 ### Scenario: rejected — a third party cannot supply the second signature
 
@@ -487,7 +487,7 @@ And deposit (30,000,000,000) == withdrawn (18,000,000,000) + refunded (12,000,00
 
 This second scenario is why `cancel()` after `end` is permitted rather than rejected: it is the only
 in-protocol way to resolve a milestone that was never approved. Rejecting it would strand the tranche
-permanently — see [threat-model T3](../research/threat-model.md#t3--an-approver-who-never-comes-back),
+permanently — see [threat-model T3](threat-model.md#t3--an-approver-who-never-comes-back),
 which this narrows for cancelable streams and leaves untouched for non-cancelable ones.
 
 ### Scenario: cancel with an unmet milestone in flight — the gated tranche returns to the sender, not just its unaccrued fraction
@@ -520,7 +520,7 @@ And deposit (30,000,000,000) == withdrawn (18,000,000,000) + refunded (10,000,00
 
 The pause covers exactly one entry point. These scenarios exist mostly to pin down what it *cannot*
 do, since that is the load-bearing half — see
-[research/upgradeability-and-pause.md](../research/upgradeability-and-pause.md#pausing-scoped-by-entry-point).
+[research/upgradeability-and-pause.md](upgradeability-and-pause.md#pausing-scoped-by-entry-point).
 
 ### Scenario: pausing blocks create_stream and nothing else
 
@@ -608,7 +608,7 @@ useful than the conclusion alone.
    to the sender — a real transfer, not a no-op. Permitting the call is what makes a never-approved
    milestone recoverable at all; rejecting it would strand the tranche permanently.
 3. **Milestone revocation** — **no revocation.** Milestone state is monotonic and `Met` is terminal,
-   decided in [research/milestone-revocation.md](../research/milestone-revocation.md). Re-locking a
+   decided in [research/milestone-revocation.md](milestone-revocation.md). Re-locking a
    tranche after a withdrawal has settled would charge the shortfall against the recipient's other
    tranches, because `withdrawn` is one stream-wide counter.
 4. **`create_stream` and non-standard transfer behaviour** — **store the measured balance delta.** The

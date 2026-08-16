@@ -2,13 +2,13 @@
 
 A path from an empty toolchain to a verified build environment, with real output from actually
 running each command — not transcribed from another doc. Replaces the setup section that used to
-live in [CONTRIBUTING.md](../CONTRIBUTING.md); that file now points here.
+live in [CONTRIBUTING.md](CONTRIBUTING.md); that file now points here.
 
 **Verified on:** Linux (Pop!\_OS 22.04, kernel 6.17, x86_64) — see [What wasn't verified
 here](#what-wasnt-verified-here) for the two steps this pass didn't get through, and
 [Troubleshooting](#troubleshooting) for what's expected to differ on macOS/WSL.
 
-There is no code in this repo yet — see [ROADMAP.md](../ROADMAP.md). Nothing here builds a
+There is no code in this repo yet — see [ROADMAP.md](ROADMAP.md). Nothing here builds a
 contract. This doc ends at "the toolchain is verified," not "the project builds," because that
 second thing doesn't exist yet.
 
@@ -19,7 +19,7 @@ rustup install stable
 rustup target add wasm32v1-none
 ```
 
-`wasm32v1-none` needs rustc 1.84 or newer ([CONTRIBUTING.md](../CONTRIBUTING.md) says so; this is
+`wasm32v1-none` needs rustc 1.84 or newer ([CONTRIBUTING.md](CONTRIBUTING.md) says so; this is
 the check that confirms it). On this machine:
 
 ```
@@ -76,9 +76,9 @@ The old setup section also listed `stellar contract build`, `cargo test`, `cargo
 contract crates in this repo yet, so running them today would either error out or silently do
 nothing, and pasting their output would be exactly the invented build step this issue said not to
 fabricate. `cargo fmt`/`cargo clippy -D warnings` passing is still a real CI expectation — see
-[CONTRIBUTING.md](../CONTRIBUTING.md)'s Pull requests section — it just has nothing to check yet.
+[CONTRIBUTING.md](CONTRIBUTING.md)'s Pull requests section — it just has nothing to check yet.
 The build/test commands themselves arrive with Phase 1's contract crates; see
-[ROADMAP.md](../ROADMAP.md).
+[ROADMAP.md](ROADMAP.md).
 
 ## Stellar CLI
 
@@ -140,7 +140,7 @@ it's on.
 
 A root `package.json` may or may not exist yet, depending on whether the docs-tooling PR (CI
 lint/format setup) has landed — the SDK/dashboard workspace itself lands with a later phase (see
-[ROADMAP.md](../ROADMAP.md)). Either way, `corepack` reads `packageManager` from whichever
+[ROADMAP.md](ROADMAP.md)). Either way, `corepack` reads `packageManager` from whichever
 `package.json` is present and fetches the pinned pnpm version automatically the first time you run
 a `pnpm` command in this repo — you won't need to `npm install -g pnpm` yourself. If neither exists
 yet, `corepack enable` is the whole Node/pnpm setup for now.
@@ -196,7 +196,7 @@ finding this doc is for — correct this section in your PR rather than working 
 
 ## Next
 
-- [../CONTRIBUTING.md](../CONTRIBUTING.md) — how to pick up an issue once your toolchain checks out.
+- [../CONTRIBUTING.md](CONTRIBUTING.md) — how to pick up an issue once your toolchain checks out.
 - [architecture.md](architecture.md) — why the toolchain looks the way it does (`wasm32v1-none`,
   `i128` arithmetic, the read-budget constants `stellar network settings` reports).
-- [../ROADMAP.md](../ROADMAP.md) — Phase 1 is where contract crates actually arrive.
+- [../ROADMAP.md](ROADMAP.md) — Phase 1 is where contract crates actually arrive.
