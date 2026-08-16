@@ -27,6 +27,10 @@ in your PR — see "How you get added" below. Alphabetical by handle. Format:
 | [@dannyy2000](https://github.com/dannyy2000) | The TTL and state-archival research in [research/ttl-strategy.md](ttl-strategy.md), including the finding that no single extension can cover a multi-year stream, and the Protocol 23 correction to the SDK's restore flow. The indexer design in [research/indexer-design.md](indexer-design.md) — polling as a constraint rather than a preference, TOID as the dedup and ordering key, and the two-layer schema that makes wipe-and-replay deterministic. | [#21](https://github.com/StelFlow-labs/StelFlow/pull/21), [#22](https://github.com/StelFlow-labs/StelFlow/pull/22) |
 | [@Godbrand0](https://github.com/Godbrand0) | The behaviour specs in [specs/behaviour.md](behaviour.md) — 31 Given/When/Then scenarios and five design questions the docs turned out not to answer. The verified [dev-setup.md](dev-setup.md), written by running every command and naming the two steps that weren't run rather than faking them. The docs CI workflow, including the two-job split that keeps external link rot from gating PRs. | [#26](https://github.com/StelFlow-labs/StelFlow/pull/26), [#27](https://github.com/StelFlow-labs/StelFlow/pull/27), [#28](https://github.com/StelFlow-labs/StelFlow/pull/28) |
 
+### This release
+
+The MVP — contract, deployment, and dashboard — was built by [@jayteemoney](https://github.com/jayteemoney) with [Claude Code](https://claude.com/claude-code). Work that came from other people is credited above and in the commit history; where a design decision came from a contributor's PR, the document recording it says so.
+
 ## Design review and prior art
 
 Credit for input that isn't code.
