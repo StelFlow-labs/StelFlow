@@ -17,7 +17,7 @@
 //! `amount * (elapsed / duration)`, which would floor the ratio to zero for
 //! every stream shorter than its own duration.
 
-use soroban_sdk::{contracttype, Vec};
+use soroban_sdk::contracttype;
 
 use crate::error::Error;
 use crate::types::{Milestone, MilestoneState, OnExpiry, Stream};
@@ -193,15 +193,6 @@ pub fn settle(stream: &Stream, now: u64) -> Result<Settlement, Error> {
         refund,
         recipient_balance: (recipient_earned - stream.withdrawn).max(0),
     })
-}
-
-/// Sum of every milestone amount, used to derive `base_amount` at creation.
-pub fn gated_total(milestones: &Vec<Milestone>) -> Result<i128, Error> {
-    let mut sum = 0i128;
-    for milestone in milestones.iter() {
-        sum = add(sum, milestone.amount)?;
-    }
-    Ok(sum)
 }
 
 fn add(lhs: i128, rhs: i128) -> Result<i128, Error> {

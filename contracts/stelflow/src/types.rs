@@ -44,6 +44,34 @@ pub enum OnExpiry {
     ToSender = 1,
 }
 
+/// What a caller supplies when creating a stream.
+///
+/// Deliberately *not* [`Milestone`]: it has no `state` field, so there is no way
+/// to ask for a milestone that starts already met. Validating that on a shared
+/// struct would have been a rejection case to remember; leaving the field out
+/// removes the possibility instead.
+#[contracttype]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MilestoneSpec {
+    pub amount: i128,
+    pub approver: Address,
+    /// Absolute timestamp, or zero for no deadline. Must be `>= end`.
+    pub deadline: u64,
+    pub on_expiry: OnExpiry,
+}
+
+impl MilestoneSpec {
+    pub fn into_milestone(self) -> Milestone {
+        Milestone {
+            amount: self.amount,
+            approver: self.approver,
+            state: MilestoneState::Unmet,
+            deadline: self.deadline,
+            on_expiry: self.on_expiry,
+        }
+    }
+}
+
 #[contracttype]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Milestone {

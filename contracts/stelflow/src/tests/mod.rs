@@ -22,7 +22,7 @@ use soroban_sdk::testutils::{Address as _, Ledger};
 use soroban_sdk::token::{StellarAssetClient, TokenClient};
 use soroban_sdk::{vec, Address, Env, Vec};
 
-use crate::{Milestone, MilestoneState, OnExpiry, StelFlow, StelFlowClient};
+use crate::{MilestoneSpec, OnExpiry, StelFlow, StelFlowClient};
 
 pub const DAY: u64 = 86_400;
 pub const START: u64 = 1_000_000;
@@ -58,11 +58,9 @@ impl<'a> Harness<'a> {
         let asset = env.register_stellar_asset_contract_v2(issuer);
         let token_id = asset.address();
 
-        let contract_id = env.register(StelFlow, ());
-        let client = StelFlowClient::new(&env, &contract_id);
-
         let pauser = Address::generate(&env);
-        client.initialize(&Some(pauser.clone()));
+        let contract_id = env.register(StelFlow, (Some(pauser.clone()),));
+        let client = StelFlowClient::new(&env, &contract_id);
 
         let sender = Address::generate(&env);
         let harness = Self {
@@ -92,20 +90,19 @@ impl<'a> Harness<'a> {
         self.warp_to(START + days * DAY);
     }
 
-    pub fn no_milestones(&self) -> Vec<Milestone> {
+    pub fn no_milestones(&self) -> Vec<MilestoneSpec> {
         Vec::new(&self.env)
     }
 
     /// One milestone holding `GATED`, approved by `self.approver`, no deadline.
-    pub fn one_milestone(&self) -> Vec<Milestone> {
+    pub fn one_milestone(&self) -> Vec<MilestoneSpec> {
         vec![&self.env, self.milestone(GATED, 0, OnExpiry::ToSender)]
     }
 
-    pub fn milestone(&self, amount: i128, deadline: u64, on_expiry: OnExpiry) -> Milestone {
-        Milestone {
+    pub fn milestone(&self, amount: i128, deadline: u64, on_expiry: OnExpiry) -> MilestoneSpec {
+        MilestoneSpec {
             amount,
             approver: self.approver.clone(),
-            state: MilestoneState::Unmet,
             deadline,
             on_expiry,
         }
@@ -127,7 +124,7 @@ impl<'a> Harness<'a> {
         amount: i128,
         cliff: u64,
         cancelable: bool,
-        milestones: Vec<Milestone>,
+        milestones: Vec<MilestoneSpec>,
     ) -> u64 {
         self.client.create_stream(
             &self.sender,

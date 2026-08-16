@@ -18,7 +18,7 @@ use events::{
 
 pub use accrual::{Position, Resolution, Settlement};
 pub use error::Error;
-pub use types::{ConfigKey, DataKey, Milestone, MilestoneState, OnExpiry, Stream};
+pub use types::{ConfigKey, DataKey, Milestone, MilestoneSpec, MilestoneState, OnExpiry, Stream};
 
 /// Ceiling on milestones per stream.
 ///
@@ -67,21 +67,21 @@ pub struct StelFlow;
 
 #[contractimpl]
 impl StelFlow {
-    /// Set the initial pauser. Runs once.
+    /// Set the initial pauser, atomically with deployment.
     ///
-    /// Pass `None` to deploy with no pauser at all — a contract that is
-    /// privilege-free from its first ledger. There is deliberately no
-    /// re-initialize: that would be an admin power over a live contract wearing
-    /// a different name.
-    pub fn initialize(env: Env, pauser: Option<Address>) -> Result<(), Error> {
-        if storage::is_initialized(&env) {
-            return Err(Error::AlreadyInitialized);
-        }
+    /// A constructor rather than an `initialize` anyone can call, because the gap
+    /// between the two is a real hole in a contract that can never be upgraded:
+    /// whoever calls `initialize` first would hold the pauser role permanently,
+    /// with no way to correct it. Running inside the deploy transaction means the
+    /// window does not exist.
+    ///
+    /// Pass `None` to deploy with no pauser at all — privilege-free from the
+    /// contract's first ledger. There is deliberately no way to set one later.
+    pub fn __constructor(env: Env, pauser: Option<Address>) {
         storage::set_pauser(&env, &pauser);
         storage::set_paused_until(&env, 0);
         storage::init_stream_ids(&env);
         PauserChanged { pauser }.publish(&env);
-        Ok(())
     }
 
     // -----------------------------------------------------------------------
@@ -107,7 +107,7 @@ impl StelFlow {
         end: u64,
         cliff: u64,
         cancelable: bool,
-        milestones: Vec<Milestone>,
+        milestones: Vec<MilestoneSpec>,
     ) -> Result<u64, Error> {
         sender.require_auth();
 
@@ -128,19 +128,20 @@ impl StelFlow {
         if milestones.len() > MAX_MILESTONES_PER_STREAM {
             return Err(Error::TooManyMilestones);
         }
-        for milestone in milestones.iter() {
-            if milestone.amount <= 0 {
-                return Err(Error::InvalidAmount);
-            }
-            if milestone.state != MilestoneState::Unmet {
+        let mut gated = 0i128;
+        let mut tranches = Vec::new(&env);
+        for spec in milestones.iter() {
+            if spec.amount <= 0 {
                 return Err(Error::InvalidAmount);
             }
             // A deadline before `end` would resolve a tranche while it was still
             // accruing, making `streamed_total` non-monotonic and racing a
             // legitimate approver against the clock. See docs/milestone-deadlines.md.
-            if milestone.deadline != 0 && milestone.deadline < end {
+            if spec.deadline != 0 && spec.deadline < end {
                 return Err(Error::InvalidTimeRange);
             }
+            gated = gated.checked_add(spec.amount).ok_or(Error::Overflow)?;
+            tranches.push_back(spec.into_milestone());
         }
 
         let contract = env.current_contract_address();
@@ -152,12 +153,11 @@ impl StelFlow {
         if received <= 0 {
             return Err(Error::NoValueReceived);
         }
-        let gated = accrual::gated_total(&milestones)?;
         if gated > received {
             return Err(Error::MilestonesExceedTotal);
         }
 
-        let milestone_count = milestones.len();
+        let milestone_count = tranches.len();
         let id = storage::next_stream_id(&env);
         let stream = Stream {
             id,
@@ -171,7 +171,7 @@ impl StelFlow {
             cliff,
             cancelable,
             withdrawn: 0,
-            milestones,
+            milestones: tranches,
             canceled_at: None,
         };
         storage::save_stream(&env, &stream);

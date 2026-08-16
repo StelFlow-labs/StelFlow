@@ -59,11 +59,9 @@ fn requires_the_sender_to_authorize() {
     let env = Env::default();
     let issuer = Address::generate(&env);
     let asset = env.register_stellar_asset_contract_v2(issuer);
-    let contract_id = env.register(StelFlow, ());
-    let client = crate::StelFlowClient::new(&env, &contract_id);
-
     env.mock_all_auths();
-    client.initialize(&None);
+    let contract_id = env.register(StelFlow, (None::<Address>,));
+    let client = crate::StelFlowClient::new(&env, &contract_id);
     let sender = Address::generate(&env);
     soroban_sdk::token::StellarAssetClient::new(&env, &asset.address()).mint(&sender, &TOTAL);
     env.ledger().set_timestamp(START);
@@ -296,25 +294,17 @@ fn accepts_a_deadline_at_or_after_the_stream_ends() {
     );
 }
 
-/// A milestone may not be pre-marked as met at creation, which would let a
-/// sender mint an approval nobody granted.
+/// A milestone cannot be created already met — `MilestoneSpec` has no `state`
+/// field, so the request is unrepresentable rather than rejected. This asserts
+/// the property that replaces the old validation.
 #[test]
-fn rejects_a_milestone_that_does_not_start_unmet() {
+fn every_milestone_starts_unmet() {
     let h = Harness::new();
-    let mut milestone = h.milestone(GATED, 0, OnExpiry::ToSender);
-    milestone.state = MilestoneState::Met;
-    let result = h.client.try_create_stream(
-        &h.sender,
-        &h.recipient,
-        &h.token_id,
-        &TOTAL,
-        &START,
-        &END,
-        &START,
-        &true,
-        &vec![&h.env, milestone],
+    let id = h.alice_and_bob();
+    assert_eq!(
+        h.client.get_stream(&id).milestones.get(0).unwrap().state,
+        MilestoneState::Unmet,
     );
-    assert_eq!(result, Err(Ok(Error::InvalidAmount)));
 }
 
 /// Scenario: a stream of duration 1 second
@@ -395,11 +385,11 @@ fn stream_count_tracks_creations() {
     assert_eq!(h.client.stream_count(), 2);
 }
 
+/// Setup runs inside the deploy transaction, so there is no window in which
+/// someone else could claim the pauser role — and no `initialize` to call twice.
 #[test]
-fn initialize_runs_once() {
+fn the_constructor_leaves_no_initialization_window() {
     let h = Harness::new();
-    assert_eq!(
-        h.client.try_initialize(&Some(h.stranger.clone())),
-        Err(Ok(Error::AlreadyInitialized)),
-    );
+    assert_eq!(h.client.pauser(), Some(h.pauser.clone()));
+    assert_eq!(h.client.stream_count(), 0, "the constructor consumes no id");
 }

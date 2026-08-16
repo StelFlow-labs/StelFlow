@@ -136,10 +136,8 @@ fn the_role_can_be_handed_on() {
 fn deploying_without_a_pauser_is_allowed() {
     let env = Env::default();
     env.mock_all_auths();
-    let contract_id = env.register(StelFlow, ());
+    let contract_id = env.register(StelFlow, (None::<soroban_sdk::Address>,));
     let client = crate::StelFlowClient::new(&env, &contract_id);
-
-    client.initialize(&None);
 
     assert_eq!(client.pauser(), None);
     assert_eq!(client.try_pause(), Err(Ok(Error::NotPauser)));

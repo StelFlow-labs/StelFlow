@@ -105,14 +105,8 @@ pub fn touch_stream(env: &Env, stream_id: u64) -> Result<(), Error> {
 // Config
 // ---------------------------------------------------------------------------
 
-pub fn is_initialized(env: &Env) -> bool {
-    env.storage().instance().has(&ConfigKey::NextId)
-}
-
-/// Arm the id counter without consuming an id.
-///
-/// Writing the key is also what marks the contract initialized, so this must set
-/// zero rather than reserve it — the first stream created is stream 0.
+/// Arm the id counter without consuming an id: the first stream created is
+/// stream 0.
 pub fn init_stream_ids(env: &Env) {
     env.storage().instance().set(&ConfigKey::NextId, &0u64);
     bump_instance(env);

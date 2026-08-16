@@ -10,10 +10,10 @@ use soroban_sdk::contracterror;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum Error {
-    /// `initialize` has already run. There is no re-initialize: it would be an
-    /// admin power over a live contract by another name.
-    AlreadyInitialized = 1,
-    NotInitialized = 2,
+    // 1 and 2 were AlreadyInitialized / NotInitialized. Both became unreachable
+    // when setup moved into `__constructor`, which cannot be called twice and
+    // cannot be skipped. The numbers are left unused rather than reassigned, so
+    // an error code never changes meaning between builds.
 
     // ---- create_stream ----
     /// `end` must be strictly greater than `start`; a zero-duration stream has
